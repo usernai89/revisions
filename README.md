@@ -1,50 +1,51 @@
-# revisions
-Je veux que tu construises une application de révision .
+# Révisions 📚
 
-## Objectif
-Une appli qui planifie automatiquement mes révisions selon la courbe de l'oubli et d'autres méthodes de révision(répétition espacée) 
+Application de révision **hors ligne**, installable sur téléphone (PWA),
+qui planifie automatiquement tes révisions selon la courbe de l'oubli.
+Toutes les données restent sur ton téléphone (IndexedDB).
 
-## Plateforme
-Application web installable sur téléphone (PWA), qui fonctionne HORS LIGNE. Toutes les données restent sur mon téléphone. Aucun service payant, aucun abonnement.
+Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charges.md)
 
-## Fonctionnalités principales
+## État d'avancement
 
-1. **Matières et leçons**
-   - Je crée moi même mes matières (ex : Sémiologie, Anatomie...).
-   - Dans chaque matière, j'ajoute des leçons en important un fichier : PDF, Word (.docx) ou PowerPoint (.pptx). L'appli extrait le texte et le garde dans la leçon.
-   - Je peux aussi coller du texte directement.
+- [x] **MVP** : matières, import PDF / texte collé, planification J0 → J1 → J3 (→ J7, J14, J30),
+      écran « Aujourd'hui », lecture guidée avec surlignage, QROC, rappel actif, mode sombre, hors ligne
+- [ ] Import Word (.docx) et PowerPoint (.pptx)
+- [ ] Méthode par étape modifiable dans les réglages
+- [ ] Temps disponible par jour + répartition de la charge
+- [ ] Textes à trous et flashcards générés automatiquement
+- [ ] Mes propres QCM / QROC
+- [ ] Statistiques par matière
+- [ ] Export / import de sauvegarde
+- [ ] Emplacement pour une IA (désactivé par défaut)
 
-2. **Planification automatique (courbe de l'oubli)**
-   - Quand j'ajoute une leçon, l'appli programme toute seule les révisions : J0, J1, J3, J7, J14, J30 (intervalles modifiables).
-   - Si je rate une révision, elle est reportée automatiquement, sans tout casser.
-   - Écran "Aujourd'hui" : la liste de ce que je dois réviser, triée par priorité.
-   - Je règle mon temps disponible par jour (ex : 1h en semaine, 3h le week-end). L'appli ne me donne jamais plus que ça et répartit la charge sur les jours suivants.
+## Lancer l'appli sur ton ordinateur
 
-3. **Une méthode différente à chaque révision**
-   - J0 : lecture guidée du cours, avec possibilité de surligner les points importants.
-   - J1 : QCM ou QROC (l'appli choisit le plus adapté).
-   - J3 : questions de rappel actif (je réponds de mémoire, puis je vois la correction).
-   - J7 : texte à trous (phrases du cours avec des mots-clés cachés).
-   - J14 et plus : mélange, avec cas cliniques ou flashcards.
-   La méthode par étape doit être modifiable dans les réglages.
+Il faut [Node.js](https://nodejs.org) (version 20 ou plus).
 
-4. **Génération automatique des exercices, SANS service payant**
-   - Version 1 : l'appli génère les textes à trous et les flashcards à partir du texte du cours (détection des mots-clés, définitions, listes).
-   - Je peux aussi écrire mes propres QCM/QROC.
-   - Prévois une architecture qui permettrait d'ajouter plus tard une IA (clé API) pour générer de meilleurs QCM/QROC, mais désactivée par défaut.
+```bash
+npm install        # une seule fois : télécharge les outils
+npm run dev        # lance l'appli → ouvre http://localhost:5173
+npm test           # lance les tests automatiques
+npm run build      # fabrique la version finale dans le dossier dist/
+npm run preview    # teste la version finale (avec le mode hors ligne)
+```
 
-5. **Suivi**
-   - Pour chaque question : "facile / moyen / difficile". Les questions difficiles reviennent plus vite.
-   - Statistiques simples par matière : leçons vues, taux de réussite, révisions en retard.
+## Comment ça marche (en bref)
 
-## Contraintes
-- Interface en français, gros boutons, simple et rapide à utiliser (je révise souvent dans les transports ou entre deux cours).
-- Mode sombre.
-- Les données sont stockées localement (IndexedDB) avec un bouton pour exporter/importer une sauvegarde.
-- Code simple et bien commenté pour que je puisse le comprendre.
+| Fichier | Rôle |
+|---|---|
+| `src/main.js` | Démarrage + navigation entre écrans |
+| `src/db.js` | Base de données locale (matières, leçons, révisions, questions) |
+| `src/settings.js` | Réglages (intervalles, méthodes, thème) |
+| `src/scheduler.js` | ★ Planification : dates, priorités, report des révisions ratées |
+| `src/text.js` | Nettoyage et découpage du texte des cours |
+| `src/import/pdf.js` | Extraction du texte d'un PDF |
+| `src/generators/local.js` | Génération des questions sans IA (définitions, listes) |
+| `src/methods/` | Une méthode de révision par fichier (lecture, QROC, rappel actif) |
+| `src/screens/` | Un écran par fichier |
+| `tests/` | Tests automatiques |
 
-## Façon de travailler
-1. Avant d'écrire du code, propose-moi un plan court, les technologies choisies et la structure des fichiers, puis attends mon accord.
-2. Construis d'abord un MVP : matières + import d'un PDF + planification J0/J1/J3 + écran "Aujourd'hui". Puis ajoute le reste une fonction à la fois.
-3. À chaque étape, explique-moi comment lancer et tester l'appli.
-4. Si une information te manque, pose-moi une question au lieu de deviner.
+**Règle de planification** : chaque leçon n'a qu'une révision « à faire » à la fois.
+Quand tu la termines, la suivante est calculée **à partir du jour où tu as vraiment révisé**.
+Une révision ratée reste donc en tête de liste (« en retard ») sans décaler tout le reste.

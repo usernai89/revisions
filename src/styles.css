@@ -1,0 +1,379 @@
+/* =============================================================
+   styles.css — Apparence de l'appli
+   =============================================================
+   Les couleurs sont définies une seule fois sous forme de "variables"
+   (--bg, --text...) : le thème sombre et le thème clair changent
+   juste ces variables. */
+
+:root,
+[data-theme='dark'] {
+  --bg: #12151c;
+  --surface: #1e2433;
+  --surface-2: #283044;
+  --text: #e8ecf4;
+  --muted: #9aa4b8;
+  --primary: #5b9cff;
+  --primary-text: #0b1220;
+  --danger: #ff6b6b;
+  --late: #ff9f43;
+  --ok: #3ddc97;
+  --mid: #ffd166;
+  --highlight: rgba(255, 209, 102, 0.35);
+  --border: #33405a;
+}
+
+[data-theme='light'] {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f7;
+  --text: #1b2130;
+  --muted: #5d6779;
+  --primary: #2f6fe0;
+  --primary-text: #ffffff;
+  --danger: #d63c3c;
+  --late: #d9771e;
+  --ok: #1f9e66;
+  --mid: #b98a00;
+  --highlight: rgba(255, 200, 40, 0.45);
+  --border: #d7dce6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  /* place pour la barre du bas */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 8px 0 4px;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 24px 0 8px;
+}
+.subtitle {
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+.muted {
+  color: var(--muted);
+}
+a {
+  color: var(--primary);
+}
+
+/* ---------- Barre de navigation du bas ---------- */
+#tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+#tabbar a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  min-height: 64px;
+}
+#tabbar a span {
+  font-size: 1.5rem;
+}
+#tabbar a.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ---------- Cartes ---------- */
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+a.card:active,
+button.card:active {
+  transform: scale(0.99);
+  background: var(--surface-2);
+}
+.card .title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.card .meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.card.error {
+  border-color: var(--danger);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.row .grow {
+  flex: 1;
+  min-width: 0;
+}
+.big-icon {
+  font-size: 1.8rem;
+}
+
+/* Petites étiquettes colorées */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.badge.late {
+  background: var(--late);
+  color: #1b1b1b;
+}
+.badge.done {
+  background: var(--ok);
+  color: #0b1a12;
+}
+
+/* ---------- Boutons (gros, faciles à toucher) ---------- */
+button,
+.btn {
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+button:active,
+.btn:active {
+  transform: scale(0.98);
+}
+button:disabled {
+  opacity: 0.5;
+}
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-text);
+}
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
+.btn-block {
+  width: 100%;
+}
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.btn-row > * {
+  flex: 1;
+}
+
+/* Boutons facile / moyen / difficile */
+.rate-easy {
+  background: var(--ok);
+  color: #0b1a12;
+  border: none;
+}
+.rate-medium {
+  background: var(--mid);
+  color: #1b1600;
+  border: none;
+}
+.rate-hard {
+  background: var(--danger);
+  color: #1b0606;
+  border: none;
+}
+
+/* ---------- Formulaires ---------- */
+input[type='text'],
+input[type='number'],
+textarea {
+  font: inherit;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  min-height: 56px;
+}
+textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+label {
+  display: block;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  min-height: 120px;
+}
+.file-drop input {
+  display: none;
+}
+.segmented {
+  display: flex;
+  gap: 8px;
+}
+.segmented button {
+  flex: 1;
+}
+.segmented button.active {
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+}
+
+/* ---------- Lecture guidée ---------- */
+.reader {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 16px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.reader p {
+  margin: 0 0 12px;
+}
+.reader h3 {
+  margin: 20px 0 8px;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+.reader .bullet {
+  padding-left: 12px;
+  border-left: 3px solid var(--border);
+}
+.reader .sent {
+  border-radius: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.reader .sent.hl {
+  background: var(--highlight);
+}
+.progress {
+  height: 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  overflow: hidden;
+  margin: 8px 0 16px;
+}
+.progress > div {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+
+/* ---------- Questions ---------- */
+.question {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 8px 0 16px;
+}
+.answer {
+  white-space: pre-wrap;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+}
+.pre {
+  white-space: pre-wrap;
+}
+
+/* ---------- Message temporaire ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 20px;
+  border-radius: 12px;
+  z-index: 20;
+  max-width: 90%;
+  text-align: center;
+  animation: fade 2.8s;
+}
+@keyframes fade {
+  0%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted);
+}
+.empty .big {
+  font-size: 3rem;
+}
