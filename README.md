@@ -10,7 +10,7 @@ Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charge
 
 - [x] **MVP** : matières, import PDF / texte collé, planification J0 → J1 → J3 (→ J7, J14, J30),
       écran « Aujourd'hui », lecture guidée avec surlignage, QROC, rappel actif, mode sombre, hors ligne
-- [ ] Import Word (.docx) et PowerPoint (.pptx)
+- [x] Import Word (.docx) et PowerPoint (.pptx), publication sur GitHub Pages
 - [ ] Méthode par étape modifiable dans les réglages
 - [ ] Temps disponible par jour + répartition de la charge
 - [ ] Textes à trous et flashcards générés automatiquement
@@ -31,6 +31,24 @@ npm run build      # fabrique la version finale dans le dossier dist/
 npm run preview    # teste la version finale (avec le mode hors ligne)
 ```
 
+## Installer l'appli sur ton téléphone (GitHub Pages)
+
+À faire **une seule fois** sur github.com :
+
+1. **Settings → General → Danger Zone → Change visibility → Public**
+   (seul le code devient visible ; tes cours restent sur ton téléphone).
+2. **Settings → Pages → Build and deployment → Source : « GitHub Actions »**.
+
+Ensuite, chaque modification de la branche `main` publie l'appli automatiquement
+(onglet **Actions** pour suivre). Elle est disponible à l'adresse :
+**https://usernai89.github.io/revisions/**
+
+Sur le téléphone :
+- **Android (Chrome)** : ouvre l'adresse → menu ⋮ → **Installer l'application**.
+- **iPhone (Safari)** : ouvre l'adresse → bouton Partager → **Sur l'écran d'accueil**.
+
+L'appli fonctionne ensuite hors ligne. Elle se met à jour toute seule quand tu as du réseau.
+
 ## Comment ça marche (en bref)
 
 | Fichier | Rôle |
@@ -40,7 +58,7 @@ npm run preview    # teste la version finale (avec le mode hors ligne)
 | `src/settings.js` | Réglages (intervalles, méthodes, thème) |
 | `src/scheduler.js` | ★ Planification : dates, priorités, report des révisions ratées |
 | `src/text.js` | Nettoyage et découpage du texte des cours |
-| `src/import/pdf.js` | Extraction du texte d'un PDF |
+| `src/import/` | Extraction du texte : `pdf.js`, `docx.js` (Word), `pptx.js` (PowerPoint), `index.js` choisit le bon |
 | `src/generators/local.js` | Génération des questions sans IA (définitions, listes) |
 | `src/methods/` | Une méthode de révision par fichier (lecture, QROC, rappel actif) |
 | `src/screens/` | Un écran par fichier |

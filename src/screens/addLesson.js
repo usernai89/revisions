@@ -1,15 +1,16 @@
 // =============================================================
-// screens/addLesson.js — Ajouter une leçon (import PDF ou texte collé)
+// screens/addLesson.js — Ajouter une leçon (import de fichier ou texte collé)
 // =============================================================
 // Étapes :
-//  1. on choisit un PDF (le texte est extrait et affiché dans la zone de texte)
+//  1. on choisit un fichier PDF, Word ou PowerPoint (le texte est extrait
+//     et affiché dans la zone de texte)
 //     OU on colle directement le texte ;
 //  2. on vérifie / corrige le titre et le texte ;
 //  3. "Enregistrer" : la leçon est créée et la révision J0 est programmée.
 
 import { db } from '../db.js';
 import { createLessonWithPlan } from '../scheduler.js';
-import { extractPdfText } from '../import/pdf.js';
+import { extractText, titleFromFileName, ACCEPTED_FILES } from '../import/index.js';
 import { cleanText, countWords } from '../text.js';
 import { escapeHtml, go, toast } from '../ui.js';
 
@@ -22,9 +23,10 @@ export async function render(app, subjectId) {
     <h1>Nouvelle leçon</h1>
 
     <label class="file-drop" id="drop">
-      <input type="file" id="file" accept=".pdf,application/pdf" />
+      <input type="file" id="file" accept="${ACCEPTED_FILES}" />
       <div class="big-icon">📄</div>
-      <div><strong>Importer un PDF</strong></div>
+      <div><strong>Importer un fichier</strong></div>
+      <div class="muted">PDF, Word (.docx) ou PowerPoint (.pptx)</div>
       <div class="muted" id="file-status">Touchez ici pour choisir un fichier</div>
     </label>
 
@@ -56,15 +58,15 @@ export async function render(app, subjectId) {
     if (!file) return;
     status.textContent = 'Lecture du fichier…';
     try {
-      const text = await extractPdfText(file, (page, total) => {
-        status.textContent = `Lecture de la page ${page} / ${total}…`;
+      const text = await extractText(file, (n, total) => {
+        status.textContent = `Lecture ${n} / ${total}…`;
       });
       if (countWords(text) < 5) {
-        status.textContent = '⚠️ Aucun texte trouvé. Ce PDF est peut-être scanné (images).';
+        status.textContent = '⚠️ Aucun texte trouvé. Le fichier contient peut-être seulement des images (scan).';
         return;
       }
       textArea.value = text;
-      if (!titleInput.value) titleInput.value = file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
+      if (!titleInput.value) titleInput.value = titleFromFileName(file.name);
       status.textContent = `✅ ${file.name} importé — vérifie le texte ci-dessous`;
       updateWords();
     } catch (err) {

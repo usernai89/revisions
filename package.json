@@ -21,10 +21,13 @@
   "homepage": "https://github.com/usernai89/revisions#readme",
   "dependencies": {
     "dexie": "^4.4.6",
+    "jszip": "^3.10.2",
+    "mammoth": "^1.13.0",
     "pdfjs-dist": "^6.4.299"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.6",
+    "jsdom": "^29.1.1",
     "vite": "^8.3.4",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.5"

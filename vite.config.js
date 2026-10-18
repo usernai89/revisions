@@ -37,5 +37,8 @@ export default defineConfig({
   ],
   test: {
     environment: 'node',
+    // Dans les tests, on utilise la version "navigateur" de mammoth (lecture Word),
+    // la même que dans l'appli.
+    alias: { mammoth: 'mammoth/mammoth.browser.js' },
   },
 });
