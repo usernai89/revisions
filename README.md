@@ -57,8 +57,8 @@ L'appli reprend le langage visuel des transports (on révise souvent dans le mé
 - chaque **leçon** suit un **trajet** J0 → J1 → J3 → J7 → J14 → J30 ;
 - l'écran **Aujourd'hui** est un **tableau des départs** ; la jauge compte le temps par quart d'heure.
 
-Polices incluses (fonctionnent hors ligne) : Big Shoulders Display (signalétique),
-Atkinson Hyperlegible (lecture des cours), JetBrains Mono (horaires).
+Polices incluses (fonctionnent hors ligne) : Nunito (titres et texte, lettres arrondies),
+JetBrains Mono (horaires).
 
 ## Sauvegarder ses données
 
