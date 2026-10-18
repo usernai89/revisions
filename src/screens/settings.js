@@ -1,14 +1,21 @@
 // =============================================================
 // screens/settings.js — Réglages
 // =============================================================
-// Pour l'instant : thème (sombre/clair) et intervalles de révision.
-// D'autres réglages arriveront (méthode par étape, temps par jour, sauvegarde…).
+// - Thème (sombre / clair)
+// - Étapes de révision : pour chaque étape, le jour (J0, J1, J3…) et la méthode.
+// D'autres réglages arriveront (temps par jour, sauvegarde…).
 
 import { getSettings, saveSetting, applyTheme, DEFAULT_SETTINGS } from '../settings.js';
-import { toast } from '../ui.js';
+import { escapeHtml, toast, METHOD_LABELS, METHOD_ICONS } from '../ui.js';
 
 export async function render(app) {
   const s = await getSettings();
+
+  // Copie de travail des étapes : [{ day, method }, ...]
+  let steps = s.intervals.map((day, i) => ({
+    day,
+    method: s.methods[i] ?? s.methods[s.methods.length - 1] ?? 'recall',
+  }));
 
   app.innerHTML = `
     <h1>Réglages</h1>
@@ -19,21 +26,69 @@ export async function render(app) {
       <button data-theme="light" class="${s.theme === 'light' ? 'active' : ''}">☀️ Clair</button>
     </div>
 
-    <h2>Intervalles de révision</h2>
-    <p class="muted">En jours après l'ajout de la leçon, séparés par des virgules.
-      Le premier doit être 0 (lecture le jour même).</p>
-    <form id="intervals-form">
-      <input type="text" id="intervals" inputmode="numeric" value="${s.intervals.join(', ')}" />
-      <div class="btn-row">
-        <button type="button" id="reset">Par défaut</button>
-        <button type="submit" class="btn-primary">Enregistrer</button>
-      </div>
-    </form>
-    <p class="muted">Les changements s'appliquent aux prochaines révisions programmées.</p>
+    <h2>Étapes de révision</h2>
+    <p class="muted">Pour chaque étape : le jour (après l'ajout de la leçon) et la méthode utilisée.</p>
+    <div id="steps"></div>
+    <button id="add-step" class="btn-block">＋ Ajouter une étape</button>
+    <div class="btn-row">
+      <button id="reset">Par défaut</button>
+      <button id="save" class="btn-primary">💾 Enregistrer</button>
+    </div>
+    <p class="muted">Les changements s'appliquent aux prochaines révisions.</p>
 
     <h2>À propos</h2>
     <p class="muted">Toutes tes données restent sur ce téléphone. L'appli fonctionne hors ligne.</p>
   `;
+
+  const stepsEl = app.querySelector('#steps');
+
+  /** Affiche une ligne par étape : [J __] [méthode ▾] [🗑️] */
+  function drawSteps() {
+    const options = Object.keys(METHOD_LABELS);
+    stepsEl.innerHTML = steps.map((step, i) => `
+      <div class="step-row" data-i="${i}">
+        <input class="day" type="number" min="0" inputmode="numeric" value="${step.day}"
+          aria-label="Jour de l'étape ${i + 1}" ${i === 0 ? 'readonly' : ''} />
+        <select aria-label="Méthode de l'étape ${i + 1}">
+          ${options.map((m) => `<option value="${m}" ${m === step.method ? 'selected' : ''}>
+            ${METHOD_ICONS[m]} ${escapeHtml(METHOD_LABELS[m])}</option>`).join('')}
+        </select>
+        <button class="btn-danger" aria-label="Supprimer l'étape" ${i === 0 ? 'disabled' : ''}>🗑️</button>
+      </div>`).join('');
+  }
+  drawSteps();
+
+  // Les modifications sont recopiées dans `steps` au fur et à mesure.
+  stepsEl.addEventListener('input', (e) => {
+    const i = Number(e.target.closest('.step-row').dataset.i);
+    if (e.target.matches('.day')) steps[i].day = e.target.value === '' ? NaN : Number(e.target.value);
+    if (e.target.matches('select')) steps[i].method = e.target.value;
+  });
+  stepsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    steps.splice(Number(btn.closest('.step-row').dataset.i), 1);
+    drawSteps();
+  });
+
+  app.querySelector('#add-step').onclick = () => {
+    const last = steps[steps.length - 1];
+    steps.push({ day: last.day * 2 || 1, method: 'mix' }); // ex. J30 → J60
+    drawSteps();
+  };
+
+  app.querySelector('#reset').onclick = () => {
+    steps = DEFAULT_SETTINGS.intervals.map((day, i) => ({ day, method: DEFAULT_SETTINGS.methods[i] }));
+    drawSteps();
+  };
+
+  app.querySelector('#save').onclick = async () => {
+    const error = validateSteps(steps);
+    if (error) return toast(`⚠️ ${error}`);
+    await saveSetting('intervals', steps.map((st) => st.day));
+    await saveSetting('methods', steps.map((st) => st.method));
+    toast('Étapes enregistrées');
+  };
 
   app.querySelectorAll('#theme button').forEach((btn) => {
     btn.onclick = async () => {
@@ -42,32 +97,19 @@ export async function render(app) {
       render(app);
     };
   });
-
-  app.querySelector('#reset').onclick = () => {
-    app.querySelector('#intervals').value = DEFAULT_SETTINGS.intervals.join(', ');
-  };
-
-  app.querySelector('#intervals-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const values = parseIntervals(app.querySelector('#intervals').value);
-    if (!values) {
-      toast('⚠️ Format invalide. Exemple : 0, 1, 3, 7, 14, 30');
-      return;
-    }
-    await saveSetting('intervals', values);
-    toast('Intervalles enregistrés');
-  });
 }
 
 /**
- * "0, 1, 3, 7" → [0, 1, 3, 7].
- * Renvoie null si ce n'est pas une suite croissante de nombres commençant par 0.
+ * Vérifie les étapes. Renvoie un message d'erreur, ou null si tout va bien.
+ * Règles : au moins 2 étapes, la première à J0, des jours entiers croissants.
  */
-export function parseIntervals(input) {
-  const values = input.split(/[,;\s]+/).filter(Boolean).map(Number);
-  const valid =
-    values.length >= 2 &&
-    values[0] === 0 &&
-    values.every((v, i) => Number.isInteger(v) && v >= 0 && (i === 0 || v > values[i - 1]));
-  return valid ? values : null;
+export function validateSteps(steps) {
+  if (steps.length < 2) return 'Il faut au moins 2 étapes.';
+  if (steps[0].day !== 0) return 'La première étape doit être J0.';
+  for (let i = 1; i < steps.length; i++) {
+    const day = steps[i].day;
+    if (!Number.isInteger(day) || day < 0) return `Jour invalide à l'étape ${i + 1}.`;
+    if (day <= steps[i - 1].day) return `Les jours doivent augmenter (étape ${i + 1}).`;
+  }
+  return null;
 }

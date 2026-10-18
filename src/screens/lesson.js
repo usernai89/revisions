@@ -38,7 +38,7 @@ export async function render(app, lessonId) {
               <div class="muted pre">${escapeHtml(q.answer)}</div>
             </div>`).join('')}
         </details>`
-      : `<p class="muted">Aucune définition ni liste détectée dans ce cours. Les révisions utiliseront le rappel actif sur tout le cours.</p>`}
+      : `<p class="muted">Aucune définition ni liste détectée dans ce cours. Les révisions utiliseront les textes à trous et le rappel actif.</p>`}
 
     <h2>Texte du cours</h2>
     <details class="card"><summary>Afficher le texte</summary>

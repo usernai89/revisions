@@ -1,15 +1,18 @@
 // =============================================================
 // methods/cards.js — Moteur commun "question → réponse → note"
 // =============================================================
-// Utilisé par le QROC (J1) et le rappel actif (J3).
+// Utilisé par toutes les méthodes à cartes : QROC, rappel actif,
+// texte à trous, flashcards et mélange.
 // Déroulé pour chaque carte :
 //  1. on affiche la question (et éventuellement une zone pour écrire) ;
 //  2. "Voir la réponse" ;
 //  3. on se note : facile / moyen / difficile.
 // À la fin, on renvoie le bilan { easy, medium, hard } via `finish`.
 //
-// Une carte = { prompt, answer, questionId? }
-// (questionId permet d'enregistrer la note sur la question elle-même)
+// Une carte = { prompt, answer, questionId?, promptHtml?, answerHtml? }
+// - questionId permet d'enregistrer la note sur la question elle-même ;
+// - promptHtml / answerHtml (facultatifs) : version déjà mise en forme
+//   (ex. texte à trous), à utiliser à la place du texte simple.
 
 import { db } from '../db.js';
 import { escapeHtml } from '../ui.js';
@@ -17,7 +20,7 @@ import { escapeHtml } from '../ui.js';
 /**
  * @param {HTMLElement} container
  * @param {Array} cards
- * @param {{ writeAnswer: boolean, intro: string }} options
+ * @param {{ writeAnswer: boolean, intro: string, showLabel?: string, flashcard?: boolean }} options
  * @param {(result) => void} finish
  */
 export function runCards(container, cards, options, finish) {
@@ -32,11 +35,12 @@ export function runCards(container, cards, options, finish) {
       <div class="muted">Question ${index + 1} / ${cards.length}</div>
       <div class="progress"><div style="width:${(index / cards.length) * 100}%"></div></div>
       ${index === 0 && options.intro ? `<p class="muted">${options.intro}</p>` : ''}
-      <div class="card">
-        <div class="question">${escapeHtml(card.prompt)}</div>
+      <div class="card ${options.flashcard ? 'flashcard' : ''}">
+        ${card.type ? `<div class="muted">${card.type}</div>` : ''}
+        <div class="question">${card.promptHtml ?? escapeHtml(card.prompt)}</div>
         ${options.writeAnswer ? '<textarea id="mine" placeholder="Écris ta réponse de mémoire…"></textarea>' : ''}
         <div id="answer-zone">
-          <button class="btn-primary btn-block" id="show">👀 Voir la réponse</button>
+          <button class="btn-primary btn-block" id="show">${options.showLabel ?? '👀 Voir la réponse'}</button>
         </div>
       </div>
     `;
@@ -44,7 +48,7 @@ export function runCards(container, cards, options, finish) {
     container.querySelector('#show').onclick = () => {
       container.querySelector('#answer-zone').innerHTML = `
         <div class="muted" style="margin-top:12px">Correction :</div>
-        <div class="answer">${escapeHtml(card.answer)}</div>
+        <div class="answer">${card.answerHtml ?? escapeHtml(card.answer)}</div>
         <p class="muted" style="margin-top:16px">C'était comment ?</p>
         <div class="btn-row">
           <button class="rate-easy" data-rate="easy">😀 Facile</button>
@@ -74,6 +78,16 @@ async function rateQuestion(questionId, rate) {
   const ratings = { easy: 0, medium: 0, hard: 0, ...q.ratings };
   ratings[rate]++;
   await db.questions.update(questionId, { ratings, lastRating: rate, lastSeen: Date.now() });
+}
+
+/** Mélange une liste au hasard (algorithme de Fisher-Yates). */
+export function shuffle(list) {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 /**

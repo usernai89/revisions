@@ -9,6 +9,9 @@ export const METHOD_LABELS = {
   reading: 'Lecture guidée',
   qroc: 'Questions (QROC)',
   recall: 'Rappel actif',
+  cloze: 'Texte à trous',
+  flashcards: 'Flashcards',
+  mix: 'Mélange',
 };
 
 /** Icône de chaque méthode. */
@@ -16,6 +19,9 @@ export const METHOD_ICONS = {
   reading: '📖',
   qroc: '❓',
   recall: '🧠',
+  cloze: '🧩',
+  flashcards: '🃏',
+  mix: '🔀',
 };
 
 /** Affiche un petit message en bas de l'écran pendant quelques secondes. */

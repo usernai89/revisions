@@ -12,9 +12,12 @@ import { escapeHtml, formatDateFr, go, METHOD_LABELS } from '../ui.js';
 import * as reading from '../methods/reading.js';
 import * as qroc from '../methods/qroc.js';
 import * as recall from '../methods/recall.js';
+import * as cloze from '../methods/cloze.js';
+import * as flashcards from '../methods/flashcards.js';
+import * as mix from '../methods/mix.js';
 
 // Méthode (nom dans les réglages) → module qui la réalise.
-const METHODS = { reading, qroc, recall };
+const METHODS = { reading, qroc, recall, cloze, flashcards, mix };
 
 export async function render(app, reviewId) {
   const review = await db.reviews.get(reviewId);

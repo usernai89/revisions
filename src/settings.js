@@ -11,9 +11,9 @@ export const DEFAULT_SETTINGS = {
   intervals: [0, 1, 3, 7, 14, 30],
 
   // Méthode utilisée à chaque étape (même ordre que "intervals").
-  // Valeurs possibles pour l'instant : 'reading', 'qroc', 'recall'.
-  // (Les textes à trous, flashcards, etc. arriveront dans les étapes suivantes.)
-  methods: ['reading', 'qroc', 'recall', 'recall', 'recall', 'recall'],
+  // Valeurs possibles : voir METHOD_LABELS dans ui.js
+  // ('reading', 'qroc', 'recall', 'cloze', 'flashcards', 'mix').
+  methods: ['reading', 'qroc', 'recall', 'cloze', 'mix', 'mix'],
 
   // 'dark' (sombre) ou 'light' (clair).
   theme: 'dark',

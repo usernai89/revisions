@@ -377,3 +377,50 @@ label {
 .empty .big {
   font-size: 3rem;
 }
+
+/* Texte à trous et flashcards */
+.blank {
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+mark {
+  background: var(--highlight);
+  color: inherit;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0 2px;
+}
+.card.flashcard .question {
+  text-align: center;
+  font-size: 1.4rem;
+  padding: 24px 0;
+}
+select {
+  font: inherit;
+  min-height: 56px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.step-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.step-row .day {
+  width: 88px;
+  flex: none;
+}
+.step-row select {
+  flex: 1;
+  min-width: 0;
+}
+.step-row button {
+  flex: none;
+  width: 56px;
+  padding: 0;
+}

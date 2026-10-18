@@ -11,9 +11,10 @@ Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charge
 - [x] **MVP** : matières, import PDF / texte collé, planification J0 → J1 → J3 (→ J7, J14, J30),
       écran « Aujourd'hui », lecture guidée avec surlignage, QROC, rappel actif, mode sombre, hors ligne
 - [x] Import Word (.docx) et PowerPoint (.pptx), publication sur GitHub Pages
-- [ ] Méthode par étape modifiable dans les réglages
+- [x] Étapes modifiables dans les réglages (jour + méthode), J7 texte à trous, J14/J30 mélange (flashcards + trous)
 - [ ] Temps disponible par jour + répartition de la charge
-- [ ] Textes à trous et flashcards générés automatiquement
+- [x] Textes à trous et flashcards générés automatiquement
+- [ ] Cas cliniques (avec tes propres questions ou une IA)
 - [ ] Mes propres QCM / QROC
 - [ ] Statistiques par matière
 - [ ] Export / import de sauvegarde
@@ -60,7 +61,8 @@ L'appli fonctionne ensuite hors ligne. Elle se met à jour toute seule quand tu 
 | `src/text.js` | Nettoyage et découpage du texte des cours |
 | `src/import/` | Extraction du texte : `pdf.js`, `docx.js` (Word), `pptx.js` (PowerPoint), `index.js` choisit le bon |
 | `src/generators/local.js` | Génération des questions sans IA (définitions, listes) |
-| `src/methods/` | Une méthode de révision par fichier (lecture, QROC, rappel actif) |
+| `src/generators/cloze.js` | Génération des textes à trous (choix des mots-clés) |
+| `src/methods/` | Une méthode par fichier : lecture, QROC, rappel actif, texte à trous, flashcards, mélange |
 | `src/screens/` | Un écran par fichier |
 | `tests/` | Tests automatiques |
 
