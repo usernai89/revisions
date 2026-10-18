@@ -73,9 +73,9 @@ function showSummary(app, lesson, result, next, settings) {
       <div class="arrival-sub">${escapeHtml(lesson.title)}</div>
       ${total ? `
         <div class="tally">
-          <div style="--c:var(--ok)"><strong>${result.easy}</strong>facile</div>
-          <div style="--c:var(--amber)"><strong>${result.medium}</strong>moyen</div>
-          <div style="--c:var(--bad)"><strong>${result.hard}</strong>difficile</div>
+          <div style="--c:var(--easy)"><strong>${result.easy}</strong>facile</div>
+          <div style="--c:var(--medium)"><strong>${result.medium}</strong>moyen</div>
+          <div style="--c:var(--hard)"><strong>${result.hard}</strong>difficile</div>
         </div>` : ''}
       ${result.highlights !== undefined ? `<div class="next-stop">${result.highlights} point(s) surligné(s)</div>` : ''}
       <div class="next-stop">

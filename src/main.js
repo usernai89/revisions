@@ -23,6 +23,7 @@ import * as addLesson from './screens/addLesson.js';
 import * as lesson from './screens/lesson.js';
 import * as review from './screens/review.js';
 import * as settings from './screens/settings.js';
+import * as stats from './screens/stats.js';
 import { renderNew as newQuestion, renderEdit as editQuestion } from './screens/questionEdit.js';
 
 // Liste des écrans : motif de l'adresse → écran + onglet surligné en bas.
@@ -35,6 +36,7 @@ const ROUTES = [
   { pattern: /^#\/lesson\/(\d+)\/question$/, screen: { render: newQuestion }, tab: 'subjects' },
   { pattern: /^#\/question\/(\d+)$/, screen: { render: editQuestion }, tab: 'subjects' },
   { pattern: /^#\/review\/(\d+)$/, screen: review, tab: 'today' },
+  { pattern: /^#\/stats$/, screen: stats, tab: 'stats' },
   { pattern: /^#\/settings$/, screen: settings, tab: 'settings' },
 ];
 

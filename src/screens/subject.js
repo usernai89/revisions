@@ -4,6 +4,7 @@
 
 import { db, listLessons, renameSubject, deleteSubject, subjectColor } from '../db.js';
 import { todayStr, daysBetween, stepLabel } from '../scheduler.js';
+import { summarize, formatPercent } from '../stats.js';
 import { getSettings } from '../settings.js';
 import { escapeHtml, go, lineBadge, relativeDay, toast } from '../ui.js';
 
@@ -15,6 +16,10 @@ export async function render(app, subjectId) {
   const lessons = await listLessons(subjectId);
   const today = todayStr();
   const color = subjectColor(subject);
+
+  // Statistiques de la matière.
+  const reviews = await db.reviews.where('lessonId').anyOf(lessons.map((l) => l.id)).toArray();
+  const stats = summarize(lessons, reviews, today);
 
   // Pour chaque leçon : sa prochaine révision.
   for (const lesson of lessons) {
@@ -30,6 +35,12 @@ export async function render(app, subjectId) {
       ${lineBadge(subject, color, 'big')}
       <h1 class="page-title">${escapeHtml(subject.name)}</h1>
     </div>
+    ${lessons.length ? `
+      <a class="mini-stats" href="#/stats">
+        <span><strong>${formatPercent(stats.successRate)}</strong>réussite</span>
+        <span><strong>${stats.lessonsSeen}/${stats.lessonCount}</strong>leçons vues</span>
+        <span class="${stats.overdue ? 'late' : ''}"><strong>${stats.overdue}</strong>retard${stats.overdue > 1 ? 's' : ''}</span>
+      </a>` : ''}
 
     ${lessons.length ? `
       <ol class="route" style="--line:${color}">
