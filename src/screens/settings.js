@@ -4,10 +4,12 @@
 // - Thème (sombre / clair)
 // - Temps disponible par jour (semaine / week-end)
 // - Étapes de révision : pour chaque étape, le jour (J0, J1, J3…) et la méthode.
-// D'autres réglages arriveront (sauvegarde…).
+// - Sauvegarde : exporter / importer toutes les données (voir backup.js).
 
 import { getSettings, saveSetting, applyTheme, DEFAULT_SETTINGS } from '../settings.js';
 import { escapeHtml, toast, formatMinutes, METHOD_LABELS } from '../ui.js';
+import { buildBackup, saveBackupFile, validateBackup, describeBackup, restoreBackup } from '../backup.js';
+import { todayStr, daysBetween } from '../scheduler.js';
 
 const BUDGET_STEP = 15; // le temps se règle par quarts d'heure
 const BUDGET_MAX = 12 * 60;
@@ -47,6 +49,18 @@ export async function render(app) {
       <button id="save" class="btn btn-go">Enregistrer</button>
     </div>
     <p class="hint">Les changements s'appliquent aux prochaines révisions.</p>
+
+    <h2 class="section">Sauvegarde</h2>
+    <p class="hint">Tes données ne sont que sur ce téléphone. Exporte-les de temps en temps
+      (dans tes fichiers, ton Drive, ou envoie-les-toi par mail) pour ne rien perdre.</p>
+    <div class="backup-status">Dernière sauvegarde : <strong>${lastBackupText(s.lastBackup)}</strong></div>
+    <div class="btn-row">
+      <button id="export" class="btn btn-go">Exporter</button>
+      <label class="btn btn-ghost">Importer
+        <input type="file" id="import" accept=".json,application/json" hidden />
+      </label>
+    </div>
+    <p class="hint">Importer une sauvegarde <strong>remplace</strong> toutes les données actuelles.</p>
 
     <h2 class="section">À propos</h2>
     <p class="hint">Toutes tes données restent sur ce téléphone. L'appli fonctionne hors ligne.</p>
@@ -121,6 +135,46 @@ export async function render(app) {
       render(app);
     };
   });
+
+  // --- Exporter ---
+  app.querySelector('#export').onclick = async () => {
+    const outcome = await saveBackupFile(await buildBackup());
+    if (outcome === 'cancelled') return;
+    await saveSetting('lastBackup', todayStr());
+    toast(outcome === 'shared' ? 'Sauvegarde prête' : 'Sauvegarde téléchargée');
+    render(app);
+  };
+
+  // --- Importer ---
+  app.querySelector('#import').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    let data;
+    try {
+      data = JSON.parse(await file.text());
+    } catch {
+      return toast("Ce fichier n'est pas une sauvegarde lisible.");
+    }
+    const error = validateBackup(data);
+    if (error) return toast(error);
+
+    const date = data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('fr-FR') : '?';
+    const ok = confirm(`Sauvegarde du ${date} : ${describeBackup(data)}.\n\n`
+      + 'Remplacer TOUTES tes données actuelles par cette sauvegarde ?');
+    if (!ok) return;
+
+    await restoreBackup(data);
+    applyTheme((await getSettings()).theme);
+    toast('Sauvegarde restaurée');
+    render(app);
+  });
+}
+
+/** "aujourd'hui", "il y a 12 jours", "jamais". */
+function lastBackupText(date) {
+  if (!date) return 'jamais';
+  const days = daysBetween(date, todayStr());
+  return days === 0 ? "aujourd'hui" : days === 1 ? 'hier' : `il y a ${days} jours`;
 }
 
 /** Une ligne de réglage : libellé, bouton −, valeur, bouton +. */

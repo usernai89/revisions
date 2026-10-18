@@ -17,7 +17,7 @@ Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charge
 - [x] Mes propres QCM / QROC (avec énoncé de cas clinique), QCM automatiques à partir des définitions
 - [x] Nouvelle interface « réseau de transport »
 - [x] Statistiques (écran Bilan) : réussite, ponctualité, retards, leçons vues, activité sur 14 jours, rapport par matière
-- [ ] Export / import de sauvegarde
+- [x] Export / import de sauvegarde (fichier .json, rappel au bout de 14 jours)
 - [ ] Emplacement pour une IA (désactivé par défaut)
 
 ## Lancer l'appli sur ton ordinateur
@@ -60,6 +60,14 @@ L'appli reprend le langage visuel des transports (on révise souvent dans le mé
 Polices incluses (fonctionnent hors ligne) : Big Shoulders Display (signalétique),
 Atkinson Hyperlegible (lecture des cours), JetBrains Mono (horaires).
 
+## Sauvegarder ses données
+
+Tout est stocké sur le téléphone. **Réglages → Sauvegarde → Exporter** crée un fichier
+`revisions-sauvegarde-AAAA-MM-JJ.json` : sur téléphone, le menu de partage s'ouvre
+(enregistre-le dans Fichiers, Drive, ou envoie-le-toi par mail) ; sur ordinateur, il est
+téléchargé. **Importer** remplace toutes les données actuelles par celles du fichier.
+L'écran « Aujourd'hui » te le rappelle si ta dernière sauvegarde date de plus de 14 jours.
+
 ## Comment ça marche (en bref)
 
 | Fichier | Rôle |
@@ -68,6 +76,7 @@ Atkinson Hyperlegible (lecture des cours), JetBrains Mono (horaires).
 | `src/db.js` | Base de données locale (matières, leçons, révisions, questions) |
 | `src/settings.js` | Réglages (intervalles, méthodes, thème) |
 | `src/scheduler.js` | ★ Planification : dates, priorités, report des révisions ratées |
+| `src/backup.js` | Export / import de toutes les données dans un fichier .json |
 | `src/stats.js` | Calcul des statistiques (réussite, ponctualité, retards, activité) |
 | `src/text.js` | Nettoyage et découpage du texte des cours |
 | `src/import/` | Extraction du texte : `pdf.js`, `docx.js` (Word), `pptx.js` (PowerPoint), `index.js` choisit le bon |

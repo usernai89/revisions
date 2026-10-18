@@ -17,6 +17,7 @@ import { getSettings } from '../settings.js';
 import { escapeHtml, formatDateFr, formatMinutes, lineBadge, METHOD_LABELS, METHOD_CODES } from '../ui.js';
 
 const DAYS_AHEAD = 8; // aujourd'hui + 7 jours
+const BACKUP_REMINDER_DAYS = 14; // rappel de sauvegarde au-delà de 14 jours
 const SLOT = 15; // une case de la jauge = 15 minutes
 
 export async function render(app) {
@@ -66,6 +67,8 @@ export async function render(app) {
       <ul class="timetable">${upcoming.map((day) => timetableRow(day)).join('')}</ul>
       <p class="hint">Prévision si tu fais tes révisions comme prévu.</p>
     ` : ''}
+
+    ${backupReminder(settings.lastBackup, pending.length, today)}
   `;
 
   startClock();
@@ -149,6 +152,18 @@ function emptyState(day, postponedCount, doneMinutes) {
       <p>Ajoute une leçon : sa première révision partira aujourd'hui.</p>
       <a class="btn btn-go" href="#/subjects">Ajouter une leçon</a>
     </div>`;
+}
+
+/** Petit rappel discret si aucune sauvegarde récente (et qu'il y a des données). */
+function backupReminder(lastBackup, pendingCount, today) {
+  if (!pendingCount) return '';
+  if (lastBackup && daysBetween(lastBackup, today) < BACKUP_REMINDER_DAYS) return '';
+  return `
+    <a class="reminder" href="#/settings">
+      <strong>Pense à sauvegarder.</strong>
+      ${lastBackup ? `Dernière sauvegarde il y a ${daysBetween(lastBackup, today)} jours.` : 'Aucune sauvegarde pour l\'instant.'}
+      Réglages → Sauvegarde.
+    </a>`;
 }
 
 /** Horloge en haut à droite, comme sur un quai (mise à jour chaque minute). */

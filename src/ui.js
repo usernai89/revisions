@@ -51,6 +51,7 @@ export function lineBadge(subject, color, size = '') {
 
 /** Affiche un petit message en bas de l'écran pendant quelques secondes. */
 export function toast(message) {
+  document.querySelectorAll('.toast').forEach((old) => old.remove()); // un seul message à la fois
   const el = document.createElement('div');
   el.className = 'toast';
   el.textContent = message;

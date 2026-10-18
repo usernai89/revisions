@@ -1305,7 +1305,7 @@ mark {
 }
 .step-row {
   display: grid;
-  grid-template-columns: 76px 1fr var(--tap);
+  grid-template-columns: 96px 1fr var(--tap);
   gap: 6px;
   margin-bottom: 8px;
 }
@@ -1322,7 +1322,8 @@ mark {
   color: var(--muted);
 }
 .step-row input {
-  padding-left: 26px;
+  padding-left: 28px;
+  padding-right: 6px;
   font-family: var(--f-mono);
 }
 .step-row .btn {
@@ -1604,6 +1605,29 @@ mark {
 }
 .mini-stats .late strong {
   color: var(--bad);
+}
+
+.backup-status {
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.backup-status strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.reminder {
+  display: block;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 2px dashed var(--rule);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.reminder strong {
+  color: var(--ink);
 }
 
 .error-panel {
