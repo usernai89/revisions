@@ -1,50 +1,115 @@
-# revisions
-Je veux que tu construises une application de révision .
+# Révisions 📚
 
-## Objectif
-Une appli qui planifie automatiquement mes révisions selon la courbe de l'oubli et d'autres méthodes de révision(répétition espacée) 
+Application de révision **hors ligne**, installable sur téléphone (PWA),
+qui planifie automatiquement tes révisions selon la courbe de l'oubli.
+Toutes les données restent sur ton téléphone (IndexedDB).
 
-## Plateforme
-Application web installable sur téléphone (PWA), qui fonctionne HORS LIGNE. Toutes les données restent sur mon téléphone. Aucun service payant, aucun abonnement.
+Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charges.md)
 
-## Fonctionnalités principales
+## État d'avancement
 
-1. **Matières et leçons**
-   - Je crée moi même mes matières (ex : Sémiologie, Anatomie...).
-   - Dans chaque matière, j'ajoute des leçons en important un fichier : PDF, Word (.docx) ou PowerPoint (.pptx). L'appli extrait le texte et le garde dans la leçon.
-   - Je peux aussi coller du texte directement.
+- [x] **MVP** : matières, import PDF / texte collé, planification J0 → J1 → J3 (→ J7, J14, J30),
+      écran « Aujourd'hui », lecture guidée avec surlignage, QROC, rappel actif, mode sombre, hors ligne
+- [x] Import Word (.docx) et PowerPoint (.pptx), publication sur GitHub Pages
+- [x] Étapes modifiables dans les réglages (jour + méthode), J7 texte à trous, J14/J30 mélange (flashcards + trous)
+- [x] Temps disponible par jour (semaine / week-end) + répartition de la charge sur les jours suivants
+- [x] Textes à trous et flashcards générés automatiquement
+- [x] Mes propres QCM / QROC (avec énoncé de cas clinique), QCM automatiques à partir des définitions
+- [x] Nouvelle interface « réseau de transport »
+- [x] Statistiques (écran Bilan) : réussite, ponctualité, retards, leçons vues, activité sur 14 jours, rapport par matière
+- [x] Export / import de sauvegarde (fichier .json, rappel au bout de 14 jours)
+- [x] IA facultative (désactivée par défaut) : Claude, OpenAI, Mistral ou tout service compatible OpenAI
 
-2. **Planification automatique (courbe de l'oubli)**
-   - Quand j'ajoute une leçon, l'appli programme toute seule les révisions : J0, J1, J3, J7, J14, J30 (intervalles modifiables).
-   - Si je rate une révision, elle est reportée automatiquement, sans tout casser.
-   - Écran "Aujourd'hui" : la liste de ce que je dois réviser, triée par priorité.
-   - Je règle mon temps disponible par jour (ex : 1h en semaine, 3h le week-end). L'appli ne me donne jamais plus que ça et répartit la charge sur les jours suivants.
+## Lancer l'appli sur ton ordinateur
 
-3. **Une méthode différente à chaque révision**
-   - J0 : lecture guidée du cours, avec possibilité de surligner les points importants.
-   - J1 : QCM ou QROC (l'appli choisit le plus adapté).
-   - J3 : questions de rappel actif (je réponds de mémoire, puis je vois la correction).
-   - J7 : texte à trous (phrases du cours avec des mots-clés cachés).
-   - J14 et plus : mélange, avec cas cliniques ou flashcards.
-   La méthode par étape doit être modifiable dans les réglages.
+Il faut [Node.js](https://nodejs.org) (version 20 ou plus).
 
-4. **Génération automatique des exercices, SANS service payant**
-   - Version 1 : l'appli génère les textes à trous et les flashcards à partir du texte du cours (détection des mots-clés, définitions, listes).
-   - Je peux aussi écrire mes propres QCM/QROC.
-   - Prévois une architecture qui permettrait d'ajouter plus tard une IA (clé API) pour générer de meilleurs QCM/QROC, mais désactivée par défaut.
+```bash
+npm install        # une seule fois : télécharge les outils
+npm run dev        # lance l'appli → ouvre http://localhost:5173
+npm test           # lance les tests automatiques
+npm run build      # fabrique la version finale dans le dossier dist/
+npm run preview    # teste la version finale (avec le mode hors ligne)
+```
 
-5. **Suivi**
-   - Pour chaque question : "facile / moyen / difficile". Les questions difficiles reviennent plus vite.
-   - Statistiques simples par matière : leçons vues, taux de réussite, révisions en retard.
+## Installer l'appli sur ton téléphone (GitHub Pages)
 
-## Contraintes
-- Interface en français, gros boutons, simple et rapide à utiliser (je révise souvent dans les transports ou entre deux cours).
-- Mode sombre.
-- Les données sont stockées localement (IndexedDB) avec un bouton pour exporter/importer une sauvegarde.
-- Code simple et bien commenté pour que je puisse le comprendre.
+À faire **une seule fois** sur github.com :
 
-## Façon de travailler
-1. Avant d'écrire du code, propose-moi un plan court, les technologies choisies et la structure des fichiers, puis attends mon accord.
-2. Construis d'abord un MVP : matières + import d'un PDF + planification J0/J1/J3 + écran "Aujourd'hui". Puis ajoute le reste une fonction à la fois.
-3. À chaque étape, explique-moi comment lancer et tester l'appli.
-4. Si une information te manque, pose-moi une question au lieu de deviner.
+1. **Settings → General → Danger Zone → Change visibility → Public**
+   (seul le code devient visible ; tes cours restent sur ton téléphone).
+2. **Settings → Pages → Build and deployment → Source : « GitHub Actions »**.
+
+Ensuite, chaque modification de la branche `main` publie l'appli automatiquement
+(onglet **Actions** pour suivre). Elle est disponible à l'adresse :
+**https://usernai89.github.io/revisions/**
+
+Sur le téléphone :
+- **Android (Chrome)** : ouvre l'adresse → menu ⋮ → **Installer l'application**.
+- **iPhone (Safari)** : ouvre l'adresse → bouton Partager → **Sur l'écran d'accueil**.
+
+L'appli fonctionne ensuite hors ligne. Elle se met à jour toute seule quand tu as du réseau.
+
+## L'interface
+
+L'appli reprend le langage visuel des transports (on révise souvent dans le métro) :
+- chaque **matière** est une **ligne** de couleur, avec sa pastille ;
+- chaque **leçon** suit un **trajet** J0 → J1 → J3 → J7 → J14 → J30 ;
+- l'écran **Aujourd'hui** est un **tableau des départs** ; la jauge compte le temps par quart d'heure.
+
+Polices incluses (fonctionnent hors ligne) : Big Shoulders Display (signalétique),
+Atkinson Hyperlegible (lecture des cours), JetBrains Mono (horaires).
+
+## Sauvegarder ses données
+
+Tout est stocké sur le téléphone. **Réglages → Sauvegarde → Exporter** crée un fichier
+`revisions-sauvegarde-AAAA-MM-JJ.json` : sur téléphone, le menu de partage s'ouvre
+(enregistre-le dans Fichiers, Drive, ou envoie-le-toi par mail) ; sur ordinateur, il est
+téléchargé. **Importer** remplace toutes les données actuelles par celles du fichier.
+L'écran « Aujourd'hui » te le rappelle si ta dernière sauvegarde date de plus de 14 jours.
+
+## IA (facultative)
+
+Désactivée par défaut : l'appli fonctionne entièrement sans. Pour l'activer :
+**Réglages → IA → Activée**, choisis le fournisseur, colle **ta** clé API, puis **Tester**.
+Un bouton « Générer N questions avec l'IA » apparaît alors sur chaque leçon.
+
+| Fournisseur | Ce qu'il faut |
+|---|---|
+| Claude (Anthropic) | une clé (console.anthropic.com) ; modèle par défaut `claude-opus-5-5` |
+| OpenAI | une clé (platform.openai.com) + le nom du modèle |
+| Mistral | une clé (console.mistral.ai) + le nom du modèle |
+| Autre, compatible OpenAI | l'adresse de l'API (ex. OpenRouter, Groq, ou Ollama en local `http://localhost:11434/v1`) + le modèle |
+
+- Le texte de la leçon est envoyé au fournisseur à chaque génération ; il la facture selon ses tarifs.
+- La clé reste sur le téléphone et **n'est jamais incluse dans les sauvegardes**.
+- Les questions de l'IA (étiquette « IA ») se modifient ou se suppriment comme les autres.
+- Pour ajouter un fournisseur : un module avec une fonction `generate()` dans `src/ai/`, déclaré dans `PROVIDERS` (`src/ai/index.js`).
+
+## Comment ça marche (en bref)
+
+| Fichier | Rôle |
+|---|---|
+| `src/main.js` | Démarrage + navigation entre écrans |
+| `src/db.js` | Base de données locale (matières, leçons, révisions, questions) |
+| `src/settings.js` | Réglages (intervalles, méthodes, thème) |
+| `src/scheduler.js` | ★ Planification : dates, priorités, report des révisions ratées |
+| `src/ai/` | IA facultative : `prompt.js` (consigne + vérification), `anthropic.js` (Claude), `openaiCompatible.js` (OpenAI, Mistral…), `index.js` (choix du fournisseur) |
+| `src/backup.js` | Export / import de toutes les données dans un fichier .json |
+| `src/stats.js` | Calcul des statistiques (réussite, ponctualité, retards, activité) |
+| `src/text.js` | Nettoyage et découpage du texte des cours |
+| `src/import/` | Extraction du texte : `pdf.js`, `docx.js` (Word), `pptx.js` (PowerPoint), `index.js` choisit le bon |
+| `src/generators/local.js` | Génération des questions sans IA (définitions, listes) |
+| `src/generators/cloze.js` | Génération des textes à trous (choix des mots-clés) |
+| `src/generators/qcm.js` | Choix QCM ou QROC, QCM automatiques, correction des QCM |
+| `src/methods/` | Une méthode par fichier : lecture, QROC, rappel actif, texte à trous, flashcards, mélange |
+| `src/screens/` | Un écran par fichier |
+| `tests/` | Tests automatiques |
+
+**Règle de planification** : chaque leçon n'a qu'une révision « à faire » à la fois.
+Quand tu la termines, la suivante est calculée **à partir du jour où tu as vraiment révisé**.
+Une révision ratée reste donc en tête de liste (« en retard ») sans décaler tout le reste.
+
+**Temps par jour** : chaque révision a une durée estimée. L'écran « Aujourd'hui » prend les
+révisions par ordre de priorité tant qu'elles rentrent dans ton temps du jour ; le reste est
+reporté au lendemain (en tête de liste). La section « Prochains jours » montre la charge prévue.

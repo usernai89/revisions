@@ -1,0 +1,51 @@
+// =============================================================
+// settings.js — Les réglages de l'appli
+// =============================================================
+// Les réglages sont enregistrés dans la table "settings" de la base.
+// Si un réglage n'a jamais été modifié, on utilise la valeur par défaut.
+
+import { db } from './db.js';
+import { DEFAULT_AI_SETTINGS } from './ai/index.js';
+
+export const DEFAULT_SETTINGS = {
+  // Jours après la création de la leçon : J0, J1, J3, J7, J14, J30.
+  intervals: [0, 1, 3, 7, 14, 30],
+
+  // Méthode utilisée à chaque étape (même ordre que "intervals").
+  // Valeurs possibles : voir METHOD_LABELS dans ui.js
+  // ('reading', 'qroc', 'recall', 'cloze', 'flashcards', 'mix').
+  methods: ['reading', 'qroc', 'recall', 'cloze', 'mix', 'mix'],
+
+  // Temps disponible par jour, en minutes : du lundi au vendredi, et le week-end.
+  budget: { weekday: 60, weekend: 180 },
+
+  // 'dark' (sombre) ou 'light' (clair).
+  theme: 'dark',
+
+  // Génération de questions par IA : désactivée par défaut (voir ai/index.js).
+  ai: DEFAULT_AI_SETTINGS,
+};
+
+/** Lit tous les réglages (valeurs enregistrées + valeurs par défaut). */
+export async function getSettings() {
+  const rows = await db.settings.toArray();
+  const saved = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    // Réglage "ai" : on complète avec les valeurs par défaut (champs ajoutés plus tard).
+    ai: { ...DEFAULT_SETTINGS.ai, ...saved.ai },
+  };
+}
+
+/** Enregistre un réglage. */
+export function saveSetting(key, value) {
+  return db.settings.put({ key, value });
+}
+
+/** Applique le thème (sombre/clair) à la page. */
+export function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme === 'light' ? '#f1ede3' : '#0c0e11';
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c0e11" />
+    <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <title>Révisions</title>
+  </head>
+  <body>
+    <!-- Zone où chaque écran est affiché -->
+    <main id="app"></main>
+
+    <!-- Barre de navigation en bas (gros boutons, pratique au pouce).
+         Les pictogrammes sont dessinés en SVG, comme une signalétique. -->
+    <nav id="tabbar">
+      <a href="#/today" data-tab="today">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <rect x="2.5" y="4" width="19" height="13" rx="1.5" /><path d="M6 8.5h7M6 12.5h5M16.5 8.5h1M16.5 12.5h1M8 20.5h8" />
+        </svg>Aujourd'hui</a>
+      <a href="#/subjects" data-tab="subjects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 7h7l4 10h7M3 17h7l4-10h7" /><circle cx="12" cy="12" r="2.2" fill="currentColor" />
+        </svg>Matières</a>
+      <a href="#/stats" data-tab="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 20.5h18M6.5 17v-5M11 17V7M15.5 17v-8M20 17v-3" />
+        </svg>Bilan</a>
+      <a href="#/settings" data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" fill="currentColor" /><circle cx="15" cy="12" r="2" fill="currentColor" /><circle cx="7" cy="18" r="2" fill="currentColor" />
+        </svg>Réglages</a>
+    </nav>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
