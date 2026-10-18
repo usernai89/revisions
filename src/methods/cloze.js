@@ -13,7 +13,7 @@ import * as recall from './recall.js';
 /** Transforme les exercices à trous en cartes question/réponse. */
 export function clozeCards(lesson, max) {
   return generateCloze(lesson.text, lesson.highlights ?? [], max, lesson.title).map(({ parts }) => ({
-    type: '🧩 Texte à trous',
+    type: 'Texte à trous',
     // Question : les mots cachés deviennent "_____".
     promptHtml: parts
       .map((p) => (typeof p === 'string' ? escapeHtml(p) : '<span class="blank">_____</span>'))
@@ -33,6 +33,6 @@ export function run(container, { lesson, questions }, finish) {
   runCards(container, cards, {
     writeAnswer: false,
     intro: 'Trouve le ou les mots manquants de tête, puis révèle la phrase.',
-    showLabel: '👀 Révéler',
+    showLabel: 'Révéler',
   }, finish);
 }

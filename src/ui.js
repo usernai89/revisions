@@ -2,27 +2,52 @@
 // ui.js — Petits outils d'affichage partagés par les écrans
 // =============================================================
 
-export { escapeHtml } from './text.js';
+import { escapeHtml } from './text.js';
+
+export { escapeHtml };
 
 /** Nom affiché de chaque méthode de révision. */
 export const METHOD_LABELS = {
   reading: 'Lecture guidée',
-  qroc: 'Questions (QROC)',
+  qroc: 'QCM / QROC',
   recall: 'Rappel actif',
   cloze: 'Texte à trous',
   flashcards: 'Flashcards',
   mix: 'Mélange',
 };
 
-/** Icône de chaque méthode. */
-export const METHOD_ICONS = {
-  reading: '📖',
-  qroc: '❓',
-  recall: '🧠',
-  cloze: '🧩',
-  flashcards: '🃏',
-  mix: '🔀',
+/**
+ * Code court de chaque méthode, affiché comme un pictogramme de signalétique
+ * (petite boîte avec 3 lettres) sur le tableau des départs.
+ */
+export const METHOD_CODES = {
+  reading: 'LEC',
+  qroc: 'QCM',
+  recall: 'RAP',
+  cloze: 'TRO',
+  flashcards: 'FLA',
+  mix: 'MIX',
 };
+
+/** Initiales d'une matière pour sa pastille de ligne : "Anatomie" → "AN". */
+export function lineInitials(name = '') {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const raw = words.length > 1 ? words[0][0] + words[1][0] : name.trim().slice(0, 2);
+  return raw.toUpperCase() || '?';
+}
+
+/** Noir ou blanc, selon ce qui se lit le mieux sur une couleur de fond. */
+export function inkOn(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.55 ? '#111' : '#fff';
+}
+
+/** Pastille ronde de ligne (couleur de la matière + initiales). */
+export function lineBadge(subject, color, size = '') {
+  return `<span class="line-badge ${size}" style="--line:${color};--line-ink:${inkOn(color)}"
+    aria-label="${escapeHtml(subject?.name ?? '')}">${escapeHtml(lineInitials(subject?.name))}</span>`;
+}
 
 /** Affiche un petit message en bas de l'écran pendant quelques secondes. */
 export function toast(message) {

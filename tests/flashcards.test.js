@@ -1,7 +1,8 @@
 // Tests des flashcards.
 import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
-import { withoutArticle, flashcardCards } from '../src/methods/flashcards.js';
+import { flashcardCards } from '../src/methods/flashcards.js';
+import { withoutArticle } from '../src/text.js';
 
 describe('flashcards', () => {
   it('retire l\'article du terme', () => {

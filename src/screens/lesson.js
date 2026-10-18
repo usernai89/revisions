@@ -1,11 +1,14 @@
 // =============================================================
-// screens/lesson.js — Détail d'une leçon : planning, questions, texte
+// screens/lesson.js — Une leçon : son trajet J0 → J30, ses questions, son texte
 // =============================================================
 
-import { db, getLesson, deleteLesson } from '../db.js';
+import { db, getLesson, deleteLesson, listQuestions, subjectColor } from '../db.js';
 import { todayStr, daysBetween, stepLabel, nextDueDate, methodForStep } from '../scheduler.js';
 import { getSettings } from '../settings.js';
-import { escapeHtml, formatDateFr, go, relativeDay, toast, METHOD_LABELS } from '../ui.js';
+import { escapeHtml, formatDateFr, go, lineBadge, relativeDay, toast, METHOD_LABELS } from '../ui.js';
+
+// Étiquette de chaque type de question dans la liste.
+const KIND_TAGS = { definition: 'DÉF', list: 'LISTE', qroc: 'QROC', qcm: 'QCM' };
 
 export async function render(app, lessonId) {
   const lesson = await getLesson(lessonId);
@@ -13,44 +16,55 @@ export async function render(app, lessonId) {
 
   const settings = await getSettings();
   const subject = await db.subjects.get(lesson.subjectId);
+  const color = subjectColor(subject);
   const reviews = await db.reviews.where('lessonId').equals(lessonId).sortBy('step');
-  const questions = await db.questions.where('lessonId').equals(lessonId).toArray();
+  const questions = await listQuestions(lessonId);
+  // Tes questions d'abord, puis celles générées automatiquement.
+  questions.sort((a, b) => (a.source === 'user' ? 0 : 1) - (b.source === 'user' ? 0 : 1));
   const pending = reviews.find((r) => r.status === 'pending');
   const today = todayStr();
+  const mine = questions.filter((q) => q.source === 'user').length;
 
   app.innerHTML = `
-    <a href="#/subject/${lesson.subjectId}" class="muted">‹ ${escapeHtml(subject?.name ?? '')}</a>
-    <h1>${escapeHtml(lesson.title)}</h1>
+    <a href="#/subject/${lesson.subjectId}" class="back">${escapeHtml(subject?.name ?? '')}</a>
+    <div class="line-head">
+      ${lineBadge(subject, color)}
+      <h1 class="page-title">${escapeHtml(lesson.title)}</h1>
+    </div>
 
     ${pending && pending.dueDate <= today
-      ? `<a class="btn btn-primary btn-block" href="#/review/${pending.id}">▶️ Réviser maintenant (${stepLabel(settings.intervals, pending.step)})</a>`
+      ? `<a class="btn btn-go btn-block" href="#/review/${pending.id}">Réviser maintenant · ${stepLabel(settings.intervals, pending.step)}</a>`
       : ''}
 
-    <h2>Planning</h2>
-    <div class="card">${planningRows(reviews, pending, settings, today)}</div>
+    <h2 class="section">Trajet</h2>
+    <ol class="route" style="--line:${color}">${routeStations(reviews, pending, settings, today)}</ol>
 
-    <h2>Questions générées (${questions.length})</h2>
-    ${questions.length
-      ? `<details class="card"><summary>Voir les questions</summary>
-          ${questions.map((q) => `
-            <div style="margin-top:12px">
-              <strong>${escapeHtml(q.prompt)}</strong>
-              <div class="muted pre">${escapeHtml(q.answer)}</div>
-            </div>`).join('')}
-        </details>`
-      : `<p class="muted">Aucune définition ni liste détectée dans ce cours. Les révisions utiliseront les textes à trous et le rappel actif.</p>`}
+    <h2 class="section">Questions · ${questions.length}</h2>
+    <a class="btn btn-ghost btn-block" href="#/lesson/${lessonId}/question">+ Écrire une question (QCM / QROC)</a>
+    ${questions.length ? `
+      <p class="hint">${mine} écrite${mine > 1 ? 's' : ''} par toi · ${questions.length - mine} générée${questions.length - mine > 1 ? 's' : ''} automatiquement. Touche une question pour la modifier.</p>
+      <ul class="q-list">
+        ${questions.map((q) => `
+          <li><a href="#/question/${q.id}">
+            <span class="q-tag ${q.source === 'user' ? 'mine' : ''}">${KIND_TAGS[q.kind] ?? '?'}</span>
+            <span class="q-text">${escapeHtml(q.prompt)}
+              ${q.context ? '<small>avec cas clinique</small>' : ''}
+              ${q.lastRating === 'hard' ? '<small>noté difficile la dernière fois</small>' : ''}</span>
+          </a></li>`).join('')}
+      </ul>` : '<p class="hint">Aucune définition ni liste détectée dans ce cours. Les révisions utiliseront les textes à trous et le rappel actif, ou tes propres questions.</p>'}
 
-    <h2>Texte du cours</h2>
-    <details class="card"><summary>Afficher le texte</summary>
-      <div class="pre" style="margin-top:12px">${escapeHtml(lesson.text)}</div>
+    ${lesson.highlights?.length ? `
+      <details class="fold">
+        <summary>Points surlignés · ${lesson.highlights.length}</summary>
+        ${lesson.highlights.map((h) => `<p>${escapeHtml(h)}</p>`).join('')}
+      </details>` : ''}
+
+    <details class="fold">
+      <summary>Texte du cours</summary>
+      <div class="text-block">${escapeHtml(lesson.text)}</div>
     </details>
 
-    ${lesson.highlights?.length
-      ? `<h2>Points surlignés (${lesson.highlights.length})</h2>
-         <div class="card">${lesson.highlights.map((h) => `<p>• ${escapeHtml(h)}</p>`).join('')}</div>`
-      : ''}
-
-    <button id="delete" class="btn-danger btn-block" style="margin-top:24px">🗑️ Supprimer la leçon</button>
+    <button id="delete" class="btn btn-danger btn-block">Supprimer la leçon</button>
   `;
 
   app.querySelector('#delete').onclick = async () => {
@@ -62,32 +76,42 @@ export async function render(app, lessonId) {
 }
 
 /**
- * Tableau du planning : étapes faites, étape en cours,
- * et dates prévisionnelles des étapes suivantes (si tout se passe à l'heure).
+ * Le trajet de la leçon : une station par étape.
+ *  - étapes faites : station pleine + date ;
+ *  - étape en cours : station qui clignote ;
+ *  - étapes suivantes : date prévue si tout se passe à l'heure.
  */
-function planningRows(reviews, pending, settings, today) {
-  const rows = [];
+function routeStations(reviews, pending, settings, today) {
+  const stations = [];
+  const last = settings.intervals.length - 1;
+  const method = (step) => METHOD_LABELS[methodForStep(settings.methods, step)] ?? '';
+
   for (const r of reviews.filter((r) => r.status === 'done')) {
-    rows.push(row(stepLabel(settings.intervals, r.step), `✅ fait le ${formatDateFr(r.doneDate, false)}`));
+    stations.push(stationHtml('done', r.step, method(r.step), `fait ${formatDateFr(r.doneDate, false)}`, '', settings, r.step === last));
   }
+
   if (pending) {
     const days = daysBetween(today, pending.dueDate);
-    const badge = days < 0 ? 'badge late' : 'badge';
-    rows.push(row(
-      `${stepLabel(settings.intervals, pending.step)} · ${METHOD_LABELS[methodForStep(settings.methods, pending.step)] ?? ''}`,
-      `<span class="${badge}">${relativeDay(days)}</span>`,
-    ));
+    const cls = days < 0 ? 'late' : days === 0 ? 'now' : '';
+    const when = days < 0 ? `retard ${-days} j` : relativeDay(days);
+    stations.push(stationHtml(days <= 0 ? 'here' : 'future', pending.step, method(pending.step), when, cls, settings, pending.step === last));
+
     // Prévisions des étapes suivantes.
     let date = pending.dueDate < today ? today : pending.dueDate;
     for (let step = pending.step; ; step++) {
       date = nextDueDate(settings.intervals, step, date);
       if (!date) break;
-      rows.push(row(`<span class="muted">${stepLabel(settings.intervals, step + 1)}</span>`, `<span class="muted">vers le ${formatDateFr(date, false)}</span>`));
+      stations.push(stationHtml('future', step + 1, method(step + 1), formatDateFr(date, false), '', settings, step + 1 === last));
     }
   }
-  return rows.join('') || '<p class="muted">Aucune révision.</p>';
+  return stations.join('');
 }
 
-function row(left, right) {
-  return `<div class="row" style="padding:6px 0"><div class="grow">${left}</div><div>${right}</div></div>`;
+function stationHtml(state, step, methodLabel, when, whenClass, settings, isLast) {
+  return `
+    <li class="stn ${state}">
+      <span class="stn-dot"></span>
+      <span class="stn-name">${stepLabel(settings.intervals, step)}<span class="stn-sub">${methodLabel}${isLast ? ' · terminus' : ''}</span></span>
+      <span class="stn-when ${whenClass}">${when}</span>
+    </li>`;
 }

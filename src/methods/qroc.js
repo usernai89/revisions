@@ -1,25 +1,28 @@
 // =============================================================
-// methods/qroc.js — J1 : Questions à réponse courte (QROC)
+// methods/qroc.js — J1 : QCM ou QROC
 // =============================================================
-// On pose les questions générées à partir des définitions et listes du cours.
-// On répond dans sa tête, on regarde la réponse, puis on se note.
-// (Les QCM écrits par toi arriveront dans une prochaine étape.)
+// L'appli choisit le format le plus adapté pour chaque question
+// (voir generators/qcm.js) :
+//  - tes propres QCM et QROC tels que tu les as écrits ;
+//  - les définitions en QCM (quand la matière contient assez d'autres termes) ;
+//  - les listes à citer en QROC.
 
 import { runCards, orderQuestions } from './cards.js';
+import { toQuestionCard } from '../generators/qcm.js';
 import * as recall from './recall.js';
 
 const MAX_PER_SESSION = 15;
 
-export function run(container, { lesson, questions }, finish) {
-  // Pas de question détectée dans ce cours → on bascule sur le rappel actif.
+export function run(container, { lesson, questions, subjectTerms }, finish) {
+  // Pas de question pour ce cours → on bascule sur le rappel actif.
   if (!questions.length) return recall.run(container, { lesson, questions }, finish);
 
   const cards = orderQuestions(questions)
     .slice(0, MAX_PER_SESSION)
-    .map((q) => ({ prompt: q.prompt, answer: q.answer, questionId: q.id }));
+    .map((q) => toQuestionCard(q, subjectTerms));
 
   runCards(container, cards, {
     writeAnswer: false,
-    intro: 'Réponds dans ta tête (ou à voix basse), puis regarde la réponse.',
+    intro: 'Réponds de tête, puis vérifie. Pour les QCM, coche puis valide.',
   }, finish);
 }

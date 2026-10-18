@@ -1,11 +1,11 @@
 // =============================================================
-// screens/subject.js — Une matière : ses leçons, renommer, supprimer
+// screens/subject.js — Une matière : sa ligne et ses leçons (stations)
 // =============================================================
 
-import { db, listLessons, renameSubject, deleteSubject } from '../db.js';
+import { db, listLessons, renameSubject, deleteSubject, subjectColor } from '../db.js';
 import { todayStr, daysBetween, stepLabel } from '../scheduler.js';
 import { getSettings } from '../settings.js';
-import { escapeHtml, go, relativeDay, toast } from '../ui.js';
+import { escapeHtml, go, lineBadge, relativeDay, toast } from '../ui.js';
 
 export async function render(app, subjectId) {
   const subject = await db.subjects.get(subjectId);
@@ -14,6 +14,7 @@ export async function render(app, subjectId) {
   const settings = await getSettings();
   const lessons = await listLessons(subjectId);
   const today = todayStr();
+  const color = subjectColor(subject);
 
   // Pour chaque leçon : sa prochaine révision.
   for (const lesson of lessons) {
@@ -24,24 +25,23 @@ export async function render(app, subjectId) {
   }
 
   app.innerHTML = `
-    <a href="#/subjects" class="muted">‹ Matières</a>
-    <h1>${escapeHtml(subject.name)}</h1>
+    <a href="#/subjects" class="back">Matières</a>
+    <div class="line-head">
+      ${lineBadge(subject, color, 'big')}
+      <h1 class="page-title">${escapeHtml(subject.name)}</h1>
+    </div>
 
-    <a class="btn btn-primary btn-block" href="#/subject/${subjectId}/add">＋ Ajouter une leçon</a>
+    ${lessons.length ? `
+      <ol class="route" style="--line:${color}">
+        ${lessons.map((l) => station(l, settings, today)).join('')}
+      </ol>` : '<p class="hint">Aucune leçon sur cette ligne pour l\'instant.</p>'}
 
-    <h2>Leçons</h2>
-    ${lessons.length
-      ? lessons.map((l) => `
-        <a class="card" href="#/lesson/${l.id}">
-          <div class="title">${escapeHtml(l.title)}</div>
-          <div class="meta">${nextLabel(l.next, settings, today)}</div>
-        </a>`).join('')
-      : '<p class="muted">Aucune leçon pour l\'instant.</p>'}
+    <a class="btn btn-go btn-block" style="margin-top:18px" href="#/subject/${subjectId}/add">+ Ajouter une leçon</a>
 
-    <h2>Gérer la matière</h2>
+    <h2 class="section">Gérer la matière</h2>
     <div class="btn-row">
-      <button id="rename">✏️ Renommer</button>
-      <button id="delete" class="btn-danger">🗑️ Supprimer</button>
+      <button id="rename" class="btn btn-ghost">Renommer</button>
+      <button id="delete" class="btn btn-ghost" style="color:var(--bad)">Supprimer</button>
     </div>
   `;
 
@@ -62,8 +62,24 @@ export async function render(app, subjectId) {
   };
 }
 
-function nextLabel(next, settings, today) {
-  if (!next) return '✅ Toutes les révisions sont terminées';
-  const days = daysBetween(today, next.dueDate);
-  return `Prochaine : ${stepLabel(settings.intervals, next.step)} · ${relativeDay(days)}`;
+/** Une leçon = une station sur la ligne. */
+function station(lesson, settings, today) {
+  const next = lesson.next;
+  let state = 'done';
+  let when = 'terminé';
+  let whenClass = '';
+  if (next) {
+    const days = daysBetween(today, next.dueDate);
+    state = days <= 0 ? 'here' : 'future';
+    when = `${stepLabel(settings.intervals, next.step)} · ${days < 0 ? `retard ${-days} j` : relativeDay(days)}`;
+    whenClass = days < 0 ? 'late' : days === 0 ? 'now' : '';
+  }
+  return `
+    <li>
+      <a class="stn ${state}" href="#/lesson/${lesson.id}">
+        <span class="stn-dot"></span>
+        <span class="stn-name">${escapeHtml(lesson.title)}</span>
+        <span class="stn-when ${whenClass}">${when}</span>
+      </a>
+    </li>`;
 }

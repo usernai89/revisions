@@ -38,5 +38,5 @@ export function saveSetting(key, value) {
 export function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = theme === 'light' ? '#f5f6fa' : '#12151c';
+  if (meta) meta.content = theme === 'light' ? '#f1ede3' : '#0c0e11';
 }

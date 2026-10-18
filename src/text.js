@@ -92,3 +92,23 @@ export function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+/** "La dyspnée" → "Dyspnée", "L'orthopnée" → "Orthopnée" (plus lisible sur une carte). */
+export function withoutArticle(term) {
+  const bare = term.replace(/^(le|la|les|l['’]|un|une|des)\s*/i, '');
+  return bare.charAt(0).toUpperCase() + bare.slice(1);
+}
+
+/**
+ * Cache un terme dans un texte (pour ne pas donner la réponse) :
+ * maskTerm("La dyspnée est une gêne", "La dyspnée") → "… est une gêne".
+ * On cache aussi le terme sans son article ("dyspnée").
+ */
+export function maskTerm(text, term) {
+  const variants = [term, withoutArticle(term)].map(escapeRegExp);
+  return text.replace(new RegExp(variants.join('|'), 'gi'), '…');
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

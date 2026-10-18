@@ -14,8 +14,8 @@ Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charge
 - [x] Étapes modifiables dans les réglages (jour + méthode), J7 texte à trous, J14/J30 mélange (flashcards + trous)
 - [x] Temps disponible par jour (semaine / week-end) + répartition de la charge sur les jours suivants
 - [x] Textes à trous et flashcards générés automatiquement
-- [ ] Cas cliniques (avec tes propres questions ou une IA)
-- [ ] Mes propres QCM / QROC
+- [x] Mes propres QCM / QROC (avec énoncé de cas clinique), QCM automatiques à partir des définitions
+- [x] Nouvelle interface « réseau de transport »
 - [ ] Statistiques par matière
 - [ ] Export / import de sauvegarde
 - [ ] Emplacement pour une IA (désactivé par défaut)
@@ -50,6 +50,16 @@ Sur le téléphone :
 
 L'appli fonctionne ensuite hors ligne. Elle se met à jour toute seule quand tu as du réseau.
 
+## L'interface
+
+L'appli reprend le langage visuel des transports (on révise souvent dans le métro) :
+- chaque **matière** est une **ligne** de couleur, avec sa pastille ;
+- chaque **leçon** suit un **trajet** J0 → J1 → J3 → J7 → J14 → J30 ;
+- l'écran **Aujourd'hui** est un **tableau des départs** ; la jauge compte le temps par quart d'heure.
+
+Polices incluses (fonctionnent hors ligne) : Big Shoulders Display (signalétique),
+Atkinson Hyperlegible (lecture des cours), JetBrains Mono (horaires).
+
 ## Comment ça marche (en bref)
 
 | Fichier | Rôle |
@@ -62,6 +72,7 @@ L'appli fonctionne ensuite hors ligne. Elle se met à jour toute seule quand tu 
 | `src/import/` | Extraction du texte : `pdf.js`, `docx.js` (Word), `pptx.js` (PowerPoint), `index.js` choisit le bon |
 | `src/generators/local.js` | Génération des questions sans IA (définitions, listes) |
 | `src/generators/cloze.js` | Génération des textes à trous (choix des mots-clés) |
+| `src/generators/qcm.js` | Choix QCM ou QROC, QCM automatiques, correction des QCM |
 | `src/methods/` | Une méthode par fichier : lecture, QROC, rappel actif, texte à trous, flashcards, mélange |
 | `src/screens/` | Un écran par fichier |
 | `tests/` | Tests automatiques |

@@ -19,25 +19,24 @@ export async function render(app, subjectId) {
   if (!subject) return go('#/subjects');
 
   app.innerHTML = `
-    <a href="#/subject/${subjectId}" class="muted">‹ ${escapeHtml(subject.name)}</a>
-    <h1>Nouvelle leçon</h1>
+    <a href="#/subject/${subjectId}" class="back">${escapeHtml(subject.name)}</a>
+    <h1 class="page-title">Nouvelle leçon</h1>
 
-    <label class="file-drop" id="drop">
+    <label class="drop">
       <input type="file" id="file" accept="${ACCEPTED_FILES}" />
-      <div class="big-icon">📄</div>
-      <div><strong>Importer un fichier</strong></div>
-      <div class="muted">PDF, Word (.docx) ou PowerPoint (.pptx)</div>
-      <div class="muted" id="file-status">Touchez ici pour choisir un fichier</div>
+      <span class="drop-icon" aria-hidden="true">PDF<br>DOC<br>PPT</span>
+      <strong>Importer un fichier</strong>
+      <span class="hint" id="file-status">PDF, Word (.docx) ou PowerPoint (.pptx)</span>
     </label>
 
     <form id="form">
-      <label for="title">Titre</label>
+      <label class="field-label" for="title">Titre</label>
       <input type="text" id="title" required maxlength="120" placeholder="ex. Sémiologie cardiaque" />
 
-      <label for="text">Texte du cours <span class="muted" id="words"></span></label>
-      <textarea id="text" required placeholder="…ou colle le texte de ton cours ici"></textarea>
+      <label class="field-label" for="text">Texte du cours <span class="hint" id="words"></span></label>
+      <textarea id="text" required rows="10" placeholder="…ou colle le texte de ton cours ici"></textarea>
 
-      <button type="submit" class="btn-primary btn-block" style="margin-top:16px">💾 Enregistrer et planifier</button>
+      <button type="submit" class="btn btn-go btn-block" style="margin-top:16px">Enregistrer et planifier</button>
     </form>
   `;
 
@@ -62,16 +61,16 @@ export async function render(app, subjectId) {
         status.textContent = `Lecture ${n} / ${total}…`;
       });
       if (countWords(text) < 5) {
-        status.textContent = '⚠️ Aucun texte trouvé. Le fichier contient peut-être seulement des images (scan).';
+        status.textContent = 'Aucun texte trouvé. Le fichier contient peut-être seulement des images (scan).';
         return;
       }
       textArea.value = text;
       if (!titleInput.value) titleInput.value = titleFromFileName(file.name);
-      status.textContent = `✅ ${file.name} importé — vérifie le texte ci-dessous`;
+      status.textContent = `${file.name} importé · vérifie le texte ci-dessous`;
       updateWords();
     } catch (err) {
       console.error(err);
-      status.textContent = `❌ Impossible de lire ce fichier (${err.message})`;
+      status.textContent = `Impossible de lire ce fichier (${err.message})`;
     }
   });
 
@@ -84,7 +83,7 @@ export async function render(app, subjectId) {
 
     const lessonId = await createLessonWithPlan({ subjectId, title, text });
     const nbQuestions = await db.questions.where('lessonId').equals(lessonId).count();
-    toast(`Leçon enregistrée · ${nbQuestions} question(s) générée(s) · J0 aujourd'hui`);
+    toast(`Leçon enregistrée · ${nbQuestions} question(s) générée(s) · départ J0 aujourd'hui`);
     go(`#/lesson/${lessonId}`);
   });
 }

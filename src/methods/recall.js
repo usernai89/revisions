@@ -8,6 +8,7 @@
 //  - « Cite les points importants que tu as surlignés » (si tu as surligné à J0) ;
 //  - les listes du cours (« Cite : ... ») ;
 //  - « Explique avec tes mots : <terme> » pour les définitions ;
+//  - tes propres QROC (les QCM ne se prêtent pas au rappel libre) ;
 //  - s'il y a trop peu de cartes : « Résume la leçon de mémoire ».
 
 import { runCards, orderQuestions } from './cards.js';
@@ -26,9 +27,11 @@ export function run(container, { lesson, questions }, finish) {
 
   for (const q of orderQuestions(questions)) {
     if (cards.length >= MAX_PER_SESSION) break;
+    if (q.kind === 'qcm') continue; // un QCM ne se prête pas au rappel libre
     cards.push({
-      prompt: q.kind === 'list' ? q.prompt : `Explique avec tes mots : ${q.term}`,
+      prompt: q.kind === 'definition' ? `Explique avec tes mots : ${q.term}` : q.prompt,
       answer: q.answer,
+      context: q.context,
       questionId: q.id,
     });
   }

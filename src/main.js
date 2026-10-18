@@ -5,6 +5,14 @@
 // Avantage : le bouton "retour" du téléphone fonctionne tout seul,
 // et ça marche hors ligne sans serveur.
 
+// Polices incluses dans l'appli (donc disponibles hors ligne).
+import '@fontsource/big-shoulders-display/latin-700';
+import '@fontsource/big-shoulders-display/latin-800';
+import '@fontsource/big-shoulders-display/latin-900';
+import '@fontsource/atkinson-hyperlegible/latin-400';
+import '@fontsource/atkinson-hyperlegible/latin-700';
+import '@fontsource/jetbrains-mono/latin-400';
+import '@fontsource/jetbrains-mono/latin-500';
 import './styles.css';
 import { getSettings, applyTheme } from './settings.js';
 
@@ -15,6 +23,7 @@ import * as addLesson from './screens/addLesson.js';
 import * as lesson from './screens/lesson.js';
 import * as review from './screens/review.js';
 import * as settings from './screens/settings.js';
+import { renderNew as newQuestion, renderEdit as editQuestion } from './screens/questionEdit.js';
 
 // Liste des écrans : motif de l'adresse → écran + onglet surligné en bas.
 const ROUTES = [
@@ -23,6 +32,8 @@ const ROUTES = [
   { pattern: /^#\/subject\/(\d+)$/, screen: subject, tab: 'subjects' },
   { pattern: /^#\/subject\/(\d+)\/add$/, screen: addLesson, tab: 'subjects' },
   { pattern: /^#\/lesson\/(\d+)$/, screen: lesson, tab: 'subjects' },
+  { pattern: /^#\/lesson\/(\d+)\/question$/, screen: { render: newQuestion }, tab: 'subjects' },
+  { pattern: /^#\/question\/(\d+)$/, screen: { render: editQuestion }, tab: 'subjects' },
   { pattern: /^#\/review\/(\d+)$/, screen: review, tab: 'today' },
   { pattern: /^#\/settings$/, screen: settings, tab: 'settings' },
 ];
@@ -45,12 +56,13 @@ async function router() {
   });
 
   app.innerHTML = '';
+  app.removeAttribute('style'); // efface la couleur de ligne de l'écran précédent
   window.scrollTo(0, 0);
   try {
     await route.screen.render(app, ...params);
   } catch (err) {
     console.error(err);
-    app.innerHTML = `<div class="card error">Oups, une erreur est survenue : ${err.message}</div>`;
+    app.innerHTML = `<div class="error-panel">Oups, une erreur est survenue : ${err.message}</div>`;
   }
 }
 

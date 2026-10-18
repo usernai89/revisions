@@ -230,7 +230,7 @@ export async function completeReview(reviewId, result, intervals, doneDate = tod
     await db.reviews.update(reviewId, { status: 'done', doneDate, result, ...durations });
 
     const due = nextDueDate(intervals, review.step, doneDate);
-    if (!due) return null; // dernière étape : leçon terminée 🎉
+    if (!due) return null; // dernière étape : leçon terminée
 
     return db.reviews.add({
       lessonId: review.lessonId,

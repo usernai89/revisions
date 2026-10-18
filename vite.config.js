@@ -19,8 +19,8 @@ export default defineConfig({
         start_url: './',
         scope: './',
         display: 'standalone',
-        background_color: '#12151c',
-        theme_color: '#12151c',
+        background_color: '#0c0e11',
+        theme_color: '#0c0e11',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -30,7 +30,7 @@ export default defineConfig({
       workbox: {
         // Tous les fichiers de l'appli sont mis en cache pour le hors ligne.
         // Le moteur PDF (pdf.js) est gros : on autorise jusqu'à 5 Mo par fichier.
-        globPatterns: ['**/*.{js,mjs,css,html,png,svg}'],
+        globPatterns: ['**/*.{js,mjs,css,html,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
