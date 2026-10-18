@@ -12,7 +12,7 @@ Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charge
       écran « Aujourd'hui », lecture guidée avec surlignage, QROC, rappel actif, mode sombre, hors ligne
 - [x] Import Word (.docx) et PowerPoint (.pptx), publication sur GitHub Pages
 - [x] Étapes modifiables dans les réglages (jour + méthode), J7 texte à trous, J14/J30 mélange (flashcards + trous)
-- [ ] Temps disponible par jour + répartition de la charge
+- [x] Temps disponible par jour (semaine / week-end) + répartition de la charge sur les jours suivants
 - [x] Textes à trous et flashcards générés automatiquement
 - [ ] Cas cliniques (avec tes propres questions ou une IA)
 - [ ] Mes propres QCM / QROC
@@ -69,3 +69,7 @@ L'appli fonctionne ensuite hors ligne. Elle se met à jour toute seule quand tu 
 **Règle de planification** : chaque leçon n'a qu'une révision « à faire » à la fois.
 Quand tu la termines, la suivante est calculée **à partir du jour où tu as vraiment révisé**.
 Une révision ratée reste donc en tête de liste (« en retard ») sans décaler tout le reste.
+
+**Temps par jour** : chaque révision a une durée estimée. L'écran « Aujourd'hui » prend les
+révisions par ordre de priorité tant qu'elles rentrent dans ton temps du jour ; le reste est
+reporté au lendemain (en tête de liste). La section « Prochains jours » montre la charge prévue.

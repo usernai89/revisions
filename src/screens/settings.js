@@ -2,11 +2,15 @@
 // screens/settings.js — Réglages
 // =============================================================
 // - Thème (sombre / clair)
+// - Temps disponible par jour (semaine / week-end)
 // - Étapes de révision : pour chaque étape, le jour (J0, J1, J3…) et la méthode.
-// D'autres réglages arriveront (temps par jour, sauvegarde…).
+// D'autres réglages arriveront (sauvegarde…).
 
 import { getSettings, saveSetting, applyTheme, DEFAULT_SETTINGS } from '../settings.js';
-import { escapeHtml, toast, METHOD_LABELS, METHOD_ICONS } from '../ui.js';
+import { escapeHtml, toast, formatMinutes, METHOD_LABELS, METHOD_ICONS } from '../ui.js';
+
+const BUDGET_STEP = 15; // le temps se règle par quarts d'heure
+const BUDGET_MAX = 12 * 60;
 
 export async function render(app) {
   const s = await getSettings();
@@ -24,6 +28,14 @@ export async function render(app) {
     <div class="segmented" id="theme">
       <button data-theme="dark" class="${s.theme === 'dark' ? 'active' : ''}">🌙 Sombre</button>
       <button data-theme="light" class="${s.theme === 'light' ? 'active' : ''}">☀️ Clair</button>
+    </div>
+
+    <h2>Temps disponible par jour</h2>
+    <p class="muted">L'appli ne te proposera jamais plus que ce temps et reportera le reste
+      aux jours suivants. Mets 0 pour un jour de repos.</p>
+    <div id="budget">
+      ${budgetRow('weekday', 'Lundi → vendredi', s.budget.weekday)}
+      ${budgetRow('weekend', 'Samedi, dimanche', s.budget.weekend)}
     </div>
 
     <h2>Étapes de révision</h2>
@@ -90,6 +102,17 @@ export async function render(app) {
     toast('Étapes enregistrées');
   };
 
+  // Boutons − / + du temps par jour : enregistré immédiatement.
+  const budget = { ...s.budget };
+  app.querySelector('#budget').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const { key, delta } = btn.dataset;
+    budget[key] = Math.min(BUDGET_MAX, Math.max(0, budget[key] + Number(delta)));
+    app.querySelector(`#budget-${key}`).textContent = formatMinutes(budget[key]);
+    await saveSetting('budget', budget);
+  });
+
   app.querySelectorAll('#theme button').forEach((btn) => {
     btn.onclick = async () => {
       await saveSetting('theme', btn.dataset.theme);
@@ -97,6 +120,17 @@ export async function render(app) {
       render(app);
     };
   });
+}
+
+/** Une ligne de réglage : libellé, bouton −, valeur, bouton +. */
+function budgetRow(key, label, minutes) {
+  return `
+    <div class="stepper">
+      <div class="label">${label}</div>
+      <button data-key="${key}" data-delta="-${BUDGET_STEP}" aria-label="Moins de temps">−</button>
+      <div class="value" id="budget-${key}">${formatMinutes(minutes)}</div>
+      <button data-key="${key}" data-delta="${BUDGET_STEP}" aria-label="Plus de temps">＋</button>
+    </div>`;
 }
 
 /**

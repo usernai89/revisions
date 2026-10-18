@@ -424,3 +424,36 @@ select {
   width: 56px;
   padding: 0;
 }
+
+/* Écran Aujourd'hui : révisions reportées et prochains jours */
+.card.dimmed {
+  opacity: 0.7;
+}
+.day-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.day-list li {
+  margin: 4px 0;
+}
+
+/* Réglage du temps par jour : [ − ] 1 h 30 [ + ] */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.stepper .label {
+  flex: 1;
+}
+.stepper .value {
+  min-width: 72px;
+  text-align: center;
+  font-weight: 700;
+}
+.stepper button {
+  width: 56px;
+  padding: 0;
+  font-size: 1.4rem;
+}

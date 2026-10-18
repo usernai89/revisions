@@ -17,6 +17,7 @@
 
 import { db } from './db.js';
 import { generateQuestions } from './generators/local.js';
+import { countWords } from './text.js';
 
 // ---------- Petites fonctions sur les dates ----------
 
@@ -90,14 +91,93 @@ export function sortByPriority(reviews, today) {
 }
 
 /**
- * Durée estimée d'une révision, en minutes.
- * (Servira aussi pour respecter le temps disponible par jour.)
- *  - lecture : environ 150 mots par minute (lecture attentive + surlignage) ;
- *  - questions : environ 1 minute par question, au moins 5 minutes.
+ * Durée estimée d'une révision, en minutes (au moins 5 minutes).
+ * Sert à respecter ton temps disponible par jour.
+ *  - lecture guidée : environ 150 mots par minute (lecture attentive + surlignage) ;
+ *  - QROC / flashcards : environ 1 minute par question (15 questions maximum) ;
+ *  - rappel actif : environ 1 min 30 par question, car on écrit (10 maximum) ;
+ *  - texte à trous : une dizaine de phrases → environ 8 minutes ;
+ *  - mélange : une quinzaine de cartes → environ 12 minutes.
  */
 export function estimateMinutes(method, wordCount, questionCount) {
-  if (method === 'reading') return Math.max(5, Math.round(wordCount / 150));
-  return Math.max(5, Math.min(30, questionCount));
+  let minutes;
+  if (method === 'reading') minutes = Math.round(wordCount / 150);
+  else if (method === 'recall') minutes = Math.round(Math.min(10, questionCount + 1) * 1.5);
+  else if (method === 'cloze') minutes = 8;
+  else if (method === 'mix') minutes = 12;
+  else minutes = Math.min(15, questionCount);
+  return Math.max(5, minutes);
+}
+
+/** Est-ce un samedi ou un dimanche ? */
+export function isWeekend(dateStr) {
+  const day = parseDateStr(dateStr).getDay(); // 0 = dimanche, 6 = samedi
+  return day === 0 || day === 6;
+}
+
+/** Temps disponible (en minutes) pour une date, selon les réglages. */
+export function budgetForDate(budget, dateStr) {
+  return isWeekend(dateStr) ? budget.weekend : budget.weekday;
+}
+
+/**
+ * Répartit les révisions sur les prochains jours en respectant le temps disponible.
+ *
+ * Pour chaque jour, en partant d'aujourd'hui :
+ *  1. on prend les révisions arrivées à échéance (dont celles reportées la veille),
+ *     triées par priorité ;
+ *  2. on les ajoute tant qu'elles rentrent dans le temps du jour.
+ *     Une révision trop longue est sautée, et on essaie la suivante (plus courte) ;
+ *  3. ce qui ne rentre pas est reporté au lendemain, en tête de liste.
+ *
+ * Exception : une révision plus longue que le temps d'une journée entière
+ * (ex. un très long cours à lire) est acceptée si la journée est encore vide,
+ * sinon elle ne serait jamais faite. Un jour à 0 minute reste un jour de repos.
+ *
+ * Pour prévoir les jours suivants, quand une révision est placée un jour donné,
+ * on "simule" l'étape suivante (ex. J1 placé le 18 → J3 prévu le 20).
+ *
+ * @param {Array} reviews — révisions en attente : { id, step, dueDate, wordCount, questionCount }
+ * @param {object} options
+ *   - today : date de départ "AAAA-MM-JJ"
+ *   - days : nombre de jours à prévoir
+ *   - intervals, methods : réglages des étapes
+ *   - budget : { weekday, weekend } en minutes
+ *   - usedToday : minutes déjà révisées aujourd'hui
+ * @returns {Array<{ date, budget, used, items }>} un élément par jour ;
+ *   chaque item est la révision + { minutes, method, simulated }
+ */
+export function planDays(reviews, { today, days, intervals, methods, budget, usedToday = 0 }) {
+  let fakeId = 1e9; // identifiants des révisions simulées (après les vraies)
+  let pool = reviews.map((r) => ({ ...r, simulated: false }));
+  const plan = [];
+
+  for (let d = 0; d < days; d++) {
+    const date = addDays(today, d);
+    const dayBudget = budgetForDate(budget, date);
+    const day = { date, budget: dayBudget, used: d === 0 ? usedToday : 0, items: [] };
+
+    const available = sortByPriority(pool.filter((r) => r.dueDate <= date), date);
+    for (const review of available) {
+      const method = methodForStep(methods, review.step);
+      const minutes = estimateMinutes(method, review.wordCount, review.questionCount);
+      const fits = day.used + minutes <= dayBudget;
+      const aloneOnEmptyDay = dayBudget > 0 && day.used === 0 && day.items.length === 0;
+      if (!fits && !aloneOnEmptyDay) continue; // reporté (on essaie la suivante)
+
+      day.items.push({ ...review, method, minutes });
+      day.used += minutes;
+      pool = pool.filter((r) => r !== review);
+
+      // Étape suivante simulée, pour la prévision des jours suivants.
+      const next = nextDueDate(intervals, review.step, date);
+      if (next) {
+        pool.push({ ...review, id: fakeId++, step: review.step + 1, dueDate: next, simulated: true });
+      }
+    }
+    plan.push(day);
+  }
+  return plan;
 }
 
 // ---------- Actions sur la base de données ----------
@@ -139,13 +219,15 @@ export async function createLessonWithPlan({ subjectId, title, text }, today = t
 /**
  * Termine une révision et programme la suivante.
  * `result` résume la séance, ex. { easy: 3, medium: 1, hard: 2 }.
+ * `durations` = { estimatedMinutes, spentMinutes } : temps prévu et temps réel,
+ * pour décompter le temps déjà utilisé aujourd'hui (et pour les statistiques).
  */
-export async function completeReview(reviewId, result, intervals, doneDate = todayStr()) {
+export async function completeReview(reviewId, result, intervals, doneDate = todayStr(), durations = {}) {
   return db.transaction('rw', db.reviews, async () => {
     const review = await db.reviews.get(reviewId);
     if (!review || review.status !== 'pending') return null;
 
-    await db.reviews.update(reviewId, { status: 'done', doneDate, result });
+    await db.reviews.update(reviewId, { status: 'done', doneDate, result, ...durations });
 
     const due = nextDueDate(intervals, review.step, doneDate);
     if (!due) return null; // dernière étape : leçon terminée 🎉
@@ -161,26 +243,27 @@ export async function completeReview(reviewId, result, intervals, doneDate = tod
 }
 
 /**
- * Révisions à faire aujourd'hui (et celles en retard), triées par priorité,
- * avec la leçon et la matière associées.
+ * Toutes les révisions en attente (aujourd'hui, en retard et futures),
+ * avec la leçon, la matière et ce qu'il faut pour estimer leur durée.
  */
-export async function getDueReviews(today = todayStr()) {
-  const due = await db.reviews
-    .where('dueDate')
-    .belowOrEqual(today)
-    .and((r) => r.status === 'pending')
-    .toArray();
-  return attachDetails(sortByPriority(due, today));
+export async function getPendingReviews() {
+  const pending = await db.reviews.where('status').equals('pending').toArray();
+  return attachDetails(pending);
 }
 
-/** Révisions prévues dans les `days` prochains jours (sans aujourd'hui). */
-export async function getUpcomingReviews(days = 7, today = todayStr()) {
-  const upcoming = await db.reviews
-    .where('dueDate')
-    .between(addDays(today, 1), addDays(today, days), true, true)
-    .and((r) => r.status === 'pending')
-    .sortBy('dueDate');
-  return attachDetails(upcoming);
+/** Révisions à faire aujourd'hui (et celles en retard), triées par priorité. */
+export async function getDueReviews(today = todayStr()) {
+  const due = (await getPendingReviews()).filter((r) => r.dueDate <= today);
+  return sortByPriority(due, today);
+}
+
+/** Minutes de révision déjà faites un jour donné (selon la durée estimée). */
+export async function usedMinutesOn(dateStr) {
+  const done = await db.reviews
+    .where('status').equals('done')
+    .and((r) => r.doneDate === dateStr)
+    .toArray();
+  return done.reduce((sum, r) => sum + (r.estimatedMinutes ?? 0), 0);
 }
 
 /** Ajoute la leçon et la matière à chaque révision (pour l'affichage). */
@@ -191,7 +274,7 @@ async function attachDetails(reviews) {
     if (!lesson) continue; // leçon supprimée entre-temps
     const subject = await db.subjects.get(lesson.subjectId);
     const questionCount = await db.questions.where('lessonId').equals(lesson.id).count();
-    result.push({ ...review, lesson, subject, questionCount });
+    result.push({ ...review, lesson, subject, questionCount, wordCount: countWords(lesson.text) });
   }
   return result;
 }

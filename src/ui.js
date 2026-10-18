@@ -48,6 +48,14 @@ export function formatDateFr(dateStr, withWeekday = true) {
   });
 }
 
+/** 90 → "1 h 30", 45 → "45 min", 120 → "2 h". */
+export function formatMinutes(total) {
+  const h = Math.floor(total / 60);
+  const m = Math.round(total % 60);
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${String(m).padStart(2, '0')}` : `${h} h`;
+}
+
 /** Texte "en retard de 3 jours", "aujourd'hui", "demain", "dans 4 jours". */
 export function relativeDay(days) {
   if (days === 0) return "aujourd'hui";

@@ -15,6 +15,9 @@ export const DEFAULT_SETTINGS = {
   // ('reading', 'qroc', 'recall', 'cloze', 'flashcards', 'mix').
   methods: ['reading', 'qroc', 'recall', 'cloze', 'mix', 'mix'],
 
+  // Temps disponible par jour, en minutes : du lundi au vendredi, et le week-end.
+  budget: { weekday: 60, weekend: 180 },
+
   // 'dark' (sombre) ou 'light' (clair).
   theme: 'dark',
 };

@@ -5,7 +5,8 @@
 // puis enregistre la révision comme faite et programme la suivante.
 
 import { db, getLesson } from '../db.js';
-import { completeReview, stepLabel, methodForStep, todayStr } from '../scheduler.js';
+import { completeReview, stepLabel, methodForStep, todayStr, estimateMinutes } from '../scheduler.js';
+import { countWords } from '../text.js';
 import { getSettings } from '../settings.js';
 import { escapeHtml, formatDateFr, go, METHOD_LABELS } from '../ui.js';
 
@@ -36,8 +37,17 @@ export async function render(app, reviewId) {
     <div id="method"></div>
   `;
 
+  // Durée : estimée (pour le temps du jour) et réelle (pour les statistiques).
+  const estimatedMinutes = estimateMinutes(methodName, countWords(lesson.text), questions.length);
+  const startedAt = Date.now();
+
   method.run(app.querySelector('#method'), { lesson, questions, review }, async (result) => {
-    const nextId = await completeReview(reviewId, result, settings.intervals, todayStr());
+    // Temps réel plafonné à 3 h (au cas où l'appli serait restée ouverte).
+    const spentMinutes = Math.min(180, Math.round((Date.now() - startedAt) / 60000));
+    const nextId = await completeReview(reviewId, result, settings.intervals, todayStr(), {
+      estimatedMinutes,
+      spentMinutes,
+    });
     const next = nextId ? await db.reviews.get(nextId) : null;
     showSummary(app, lesson, result, next, settings);
   });
