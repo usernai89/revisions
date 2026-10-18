@@ -6,11 +6,9 @@
 // et ça marche hors ligne sans serveur.
 
 // Polices incluses dans l'appli (donc disponibles hors ligne).
-import '@fontsource/big-shoulders-display/latin-700';
-import '@fontsource/big-shoulders-display/latin-800';
-import '@fontsource/big-shoulders-display/latin-900';
-import '@fontsource/atkinson-hyperlegible/latin-400';
-import '@fontsource/atkinson-hyperlegible/latin-700';
+import '@fontsource/nunito/latin-400';
+import '@fontsource/nunito/latin-700';
+import '@fontsource/nunito/latin-800';
 import '@fontsource/jetbrains-mono/latin-400';
 import '@fontsource/jetbrains-mono/latin-500';
 import './styles.css';
