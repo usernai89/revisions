@@ -2,7 +2,7 @@
 // methods/mix.js — J14 et plus : Mélange
 // =============================================================
 // Pour les révisions espacées, on varie les exercices, mélangés au hasard :
-//  - tes cas cliniques (questions avec un énoncé) et tes QCM ;
+//  - tes cas cliniques (questions avec un énoncé) et tes QCM (ou ceux de l'IA) ;
 //  - des flashcards ;
 //  - des textes à trous.
 // Les questions notées "difficile" passent en priorité.
@@ -19,7 +19,7 @@ const MAX_USER_CARDS = 6; // cas cliniques + QCM
 export function run(container, { lesson, questions, subjectTerms }, finish) {
   // 1. Tes cas cliniques et tes QCM (posés tels quels).
   const userPicked = orderQuestions(questions)
-    .filter((q) => q.source === 'user' && (q.context || q.kind === 'qcm'))
+    .filter((q) => q.source !== 'auto' && (q.context || q.kind === 'qcm'))
     .slice(0, MAX_USER_CARDS);
   const userCards = userPicked.map((q) => toQuestionCard(q, subjectTerms));
 

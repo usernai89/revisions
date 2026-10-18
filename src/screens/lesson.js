@@ -2,7 +2,8 @@
 // screens/lesson.js — Une leçon : son trajet J0 → J30, ses questions, son texte
 // =============================================================
 
-import { db, getLesson, deleteLesson, listQuestions, subjectColor } from '../db.js';
+import { db, getLesson, deleteLesson, listQuestions, subjectColor, addAiQuestions } from '../db.js';
+import { isAiReady, generateQuestionsWithAI } from '../ai/index.js';
 import { todayStr, daysBetween, stepLabel, nextDueDate, methodForStep } from '../scheduler.js';
 import { getSettings } from '../settings.js';
 import { escapeHtml, formatDateFr, go, lineBadge, relativeDay, toast, METHOD_LABELS } from '../ui.js';
@@ -19,8 +20,11 @@ export async function render(app, lessonId) {
   const color = subjectColor(subject);
   const reviews = await db.reviews.where('lessonId').equals(lessonId).sortBy('step');
   const questions = await listQuestions(lessonId);
-  // Tes questions d'abord, puis celles générées automatiquement.
-  questions.sort((a, b) => (a.source === 'user' ? 0 : 1) - (b.source === 'user' ? 0 : 1));
+  // Tes questions d'abord, puis celles de l'IA, puis celles générées automatiquement.
+  const ORDER = { user: 0, ai: 1, auto: 2 };
+  questions.sort((a, b) => (ORDER[a.source] ?? 2) - (ORDER[b.source] ?? 2));
+  const fromAi = questions.filter((q) => q.source === 'ai').length;
+  const aiReady = isAiReady(settings.ai);
   const pending = reviews.find((r) => r.status === 'pending');
   const today = todayStr();
   const mine = questions.filter((q) => q.source === 'user').length;
@@ -41,12 +45,15 @@ export async function render(app, lessonId) {
 
     <h2 class="section">Questions · ${questions.length}</h2>
     <a class="btn btn-ghost btn-block" href="#/lesson/${lessonId}/question">+ Écrire une question (QCM / QROC)</a>
+    ${aiReady ? `
+      <button id="ai-gen" class="btn btn-ghost btn-block" style="margin-top:8px">Générer ${settings.ai.count} questions avec l'IA</button>
+      <p class="form-error" id="ai-status" role="status"></p>` : ''}
     ${questions.length ? `
-      <p class="hint">${mine} écrite${mine > 1 ? 's' : ''} par toi · ${questions.length - mine} générée${questions.length - mine > 1 ? 's' : ''} automatiquement. Touche une question pour la modifier.</p>
+      <p class="hint">${mine} écrite${mine > 1 ? 's' : ''} par toi${fromAi ? ` · ${fromAi} par l'IA` : ''} · ${questions.length - mine - fromAi} générée${questions.length - mine - fromAi > 1 ? 's' : ''} automatiquement. Touche une question pour la modifier.</p>
       <ul class="q-list">
         ${questions.map((q) => `
           <li><a href="#/question/${q.id}">
-            <span class="q-tag ${q.source === 'user' ? 'mine' : ''}">${KIND_TAGS[q.kind] ?? '?'}</span>
+            <span class="q-tag ${q.source === 'user' ? 'mine' : q.source === 'ai' ? 'ai' : ''}">${q.source === 'ai' ? 'IA·' : ''}${KIND_TAGS[q.kind] ?? '?'}</span>
             <span class="q-text">${escapeHtml(q.prompt)}
               ${q.context ? '<small>avec cas clinique</small>' : ''}
               ${q.lastRating === 'hard' ? '<small>noté difficile la dernière fois</small>' : ''}</span>
@@ -66,6 +73,28 @@ export async function render(app, lessonId) {
 
     <button id="delete" class="btn btn-danger btn-block">Supprimer la leçon</button>
   `;
+
+  // --- Génération par IA (si activée dans les réglages) ---
+  app.querySelector('#ai-gen')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const status = app.querySelector('#ai-status');
+    btn.disabled = true;
+    status.dataset.state = 'busy';
+    status.textContent = "Génération en cours… (jusqu'à une minute ; garde l'appli ouverte)";
+    try {
+      const generated = await generateQuestionsWithAI(lesson, settings.ai, {
+        subjectName: subject?.name,
+        existingPrompts: questions.map((q) => q.prompt).slice(0, 60),
+      });
+      await addAiQuestions(lessonId, generated);
+      toast(`${generated.length} question(s) ajoutée(s) par l'IA`);
+      render(app, lessonId);
+    } catch (err) {
+      status.dataset.state = '';
+      status.textContent = err.message;
+      btn.disabled = false;
+    }
+  });
 
   app.querySelector('#delete').onclick = async () => {
     if (!confirm(`Supprimer « ${lesson.title} » ? C'est définitif.`)) return;

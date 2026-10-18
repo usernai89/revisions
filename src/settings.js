@@ -5,6 +5,7 @@
 // Si un réglage n'a jamais été modifié, on utilise la valeur par défaut.
 
 import { db } from './db.js';
+import { DEFAULT_AI_SETTINGS } from './ai/index.js';
 
 export const DEFAULT_SETTINGS = {
   // Jours après la création de la leçon : J0, J1, J3, J7, J14, J30.
@@ -20,13 +21,21 @@ export const DEFAULT_SETTINGS = {
 
   // 'dark' (sombre) ou 'light' (clair).
   theme: 'dark',
+
+  // Génération de questions par IA : désactivée par défaut (voir ai/index.js).
+  ai: DEFAULT_AI_SETTINGS,
 };
 
 /** Lit tous les réglages (valeurs enregistrées + valeurs par défaut). */
 export async function getSettings() {
   const rows = await db.settings.toArray();
   const saved = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  return { ...DEFAULT_SETTINGS, ...saved };
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    // Réglage "ai" : on complète avec les valeurs par défaut (champs ajoutés plus tard).
+    ai: { ...DEFAULT_SETTINGS.ai, ...saved.ai },
+  };
 }
 
 /** Enregistre un réglage. */

@@ -5,11 +5,13 @@
 // - Temps disponible par jour (semaine / week-end)
 // - Étapes de révision : pour chaque étape, le jour (J0, J1, J3…) et la méthode.
 // - Sauvegarde : exporter / importer toutes les données (voir backup.js).
+// - IA (facultative, désactivée par défaut) : fournisseur, clé, modèle (voir ai/index.js).
 
 import { getSettings, saveSetting, applyTheme, DEFAULT_SETTINGS } from '../settings.js';
 import { escapeHtml, toast, formatMinutes, METHOD_LABELS } from '../ui.js';
 import { buildBackup, saveBackupFile, validateBackup, describeBackup, restoreBackup } from '../backup.js';
 import { todayStr, daysBetween } from '../scheduler.js';
+import { PROVIDERS, testAi } from '../ai/index.js';
 
 const BUDGET_STEP = 15; // le temps se règle par quarts d'heure
 const BUDGET_MAX = 12 * 60;
@@ -61,6 +63,51 @@ export async function render(app) {
       </label>
     </div>
     <p class="hint">Importer une sauvegarde <strong>remplace</strong> toutes les données actuelles.</p>
+
+    <h2 class="section">IA · facultatif</h2>
+    <p class="hint">Sans IA, l'appli génère déjà des questions. Avec ta propre clé API,
+      elle peut écrire de meilleurs QCM, QROC et cas cliniques à partir de tes cours.</p>
+    <div class="switch" id="ai-switch">
+      <button data-ai="off" class="${s.ai.enabled ? '' : 'on'}">Désactivée</button>
+      <button data-ai="on" class="${s.ai.enabled ? 'on' : ''}">Activée</button>
+    </div>
+    <div id="ai-fields" ${s.ai.enabled ? '' : 'hidden'}>
+      <label class="field-label" for="ai-provider">Fournisseur</label>
+      <select id="ai-provider">
+        ${Object.entries(PROVIDERS).map(([id, p]) =>
+          `<option value="${id}" ${id === s.ai.provider ? 'selected' : ''}>${escapeHtml(p.label)}</option>`).join('')}
+      </select>
+
+      <label class="field-label" for="ai-key">Clé API</label>
+      <input type="password" id="ai-key" autocomplete="off" spellcheck="false" value="${escapeHtml(s.ai.apiKey)}" />
+      <p class="hint" id="ai-key-help"></p>
+
+      <label class="field-label" for="ai-model">Modèle</label>
+      <input type="text" id="ai-model" autocomplete="off" spellcheck="false" value="${escapeHtml(s.ai.model)}" />
+
+      <div id="ai-url-wrap">
+        <label class="field-label" for="ai-url">Adresse de l'API</label>
+        <input type="text" id="ai-url" inputmode="url" autocomplete="off" spellcheck="false"
+          placeholder="https://…/v1" value="${escapeHtml(s.ai.baseUrl)}" />
+      </div>
+
+      <div class="field-label">Questions par génération</div>
+      <div class="stepper" id="ai-count">
+        <div class="note">Plus il y en a, plus c'est long et coûteux.</div>
+        <button class="btn btn-ghost" data-delta="-5" aria-label="Moins de questions">−</button>
+        <div class="value" id="ai-count-value">${s.ai.count}</div>
+        <button class="btn btn-ghost" data-delta="5" aria-label="Plus de questions">+</button>
+      </div>
+
+      <div class="btn-row">
+        <button id="ai-test" class="btn btn-ghost">Tester</button>
+        <button id="ai-save" class="btn btn-go">Enregistrer</button>
+      </div>
+      <p class="form-error" id="ai-status" role="status"></p>
+      <p class="hint">Le texte de la leçon est envoyé au fournisseur choisi à chaque génération,
+        qui la facture selon ses tarifs (quelques centimes par cours en général).
+        La clé reste sur ce téléphone et n'est jamais mise dans les sauvegardes.</p>
+    </div>
 
     <h2 class="section">À propos</h2>
     <p class="hint">Toutes tes données restent sur ce téléphone. L'appli fonctionne hors ligne.</p>
@@ -136,6 +183,8 @@ export async function render(app) {
     };
   });
 
+  setupAiSection(app, s.ai);
+
   // --- Exporter ---
   app.querySelector('#export').onclick = async () => {
     const outcome = await saveBackupFile(await buildBackup());
@@ -168,6 +217,75 @@ export async function render(app) {
     toast('Sauvegarde restaurée');
     render(app);
   });
+}
+
+/** Section IA : activer, choisir le fournisseur, tester, enregistrer. */
+function setupAiSection(app, initial) {
+  const fields = app.querySelector('#ai-fields');
+  const provider = app.querySelector('#ai-provider');
+  const model = app.querySelector('#ai-model');
+  const status = app.querySelector('#ai-status');
+  let count = initial.count;
+
+  // Libellés qui dépendent du fournisseur choisi.
+  const refresh = () => {
+    const p = PROVIDERS[provider.value];
+    app.querySelector('#ai-key-help').textContent = p.keyHelp;
+    app.querySelector('#ai-url-wrap').hidden = !p.customUrl;
+    model.placeholder = p.defaultModel ? `${p.defaultModel} (par défaut)` : 'nom du modèle (voir la doc du fournisseur)';
+  };
+  provider.addEventListener('change', refresh);
+  refresh();
+
+  const read = () => ({
+    ...initial,
+    provider: provider.value,
+    apiKey: app.querySelector('#ai-key').value.trim(),
+    model: model.value.trim(),
+    baseUrl: app.querySelector('#ai-url').value.trim(),
+    count,
+  });
+
+  // Activer / désactiver : enregistré tout de suite.
+  app.querySelectorAll('[data-ai]').forEach((btn) => {
+    btn.onclick = async () => {
+      const enabled = btn.dataset.ai === 'on';
+      initial = { ...read(), enabled };
+      await saveSetting('ai', initial);
+      app.querySelectorAll('[data-ai]').forEach((b) => b.classList.toggle('on', b === btn));
+      fields.hidden = !enabled;
+    };
+  });
+
+  app.querySelector('#ai-count').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    count = Math.min(30, Math.max(5, count + Number(btn.dataset.delta)));
+    app.querySelector('#ai-count-value').textContent = count;
+  });
+
+  app.querySelector('#ai-save').onclick = async () => {
+    initial = read();
+    await saveSetting('ai', initial);
+    status.textContent = '';
+    status.dataset.state = '';
+    toast('Réglages IA enregistrés');
+  };
+
+  app.querySelector('#ai-test').onclick = async () => {
+    initial = read();
+    await saveSetting('ai', initial);
+    status.dataset.state = 'busy';
+    status.textContent = 'Test en cours…';
+    try {
+      const [q] = await testAi(initial);
+      status.dataset.state = 'ok';
+      status.textContent = `Ça marche. Exemple : « ${q.prompt} »`;
+    } catch (err) {
+      status.dataset.state = '';
+      status.textContent = err.message;
+    }
+  };
 }
 
 /** "aujourd'hui", "il y a 12 jours", "jamais". */

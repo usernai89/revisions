@@ -249,6 +249,7 @@ button,
 /* ---------- Formulaires ---------- */
 input[type='text'],
 input[type='number'],
+input[type='password'],
 textarea,
 select {
   font: inherit;
@@ -289,6 +290,12 @@ textarea {
   font-weight: 700;
   min-height: 1.5em;
   margin: 12px 0 0;
+}
+.form-error[data-state='busy'] {
+  color: var(--muted);
+}
+.form-error[data-state='ok'] {
+  color: var(--ok);
 }
 .inline-form {
   display: flex;
@@ -845,6 +852,10 @@ textarea {
   border-color: var(--amber);
   color: var(--amber);
 }
+.q-tag.ai {
+  border-color: var(--easy);
+  color: var(--easy);
+}
 .q-list .q-text {
   font-size: 0.98rem;
 }
@@ -1292,6 +1303,10 @@ mark {
 }
 .stepper .label {
   font-weight: 700;
+}
+.stepper .note {
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 .stepper .value {
   text-align: center;

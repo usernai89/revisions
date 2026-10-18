@@ -63,3 +63,18 @@ describe('sauvegarde', () => {
     expect(backupFileName('2026-10-18')).toBe('revisions-sauvegarde-2026-10-18.json');
   });
 });
+
+describe('clé API et sauvegarde', () => {
+  beforeEach(async () => {
+    await Promise.all(db.tables.map((t) => t.clear()));
+  });
+
+  it("n'exporte jamais la clé, et garde celle du téléphone à l'import", async () => {
+    await saveSetting('ai', { enabled: true, provider: 'anthropic', apiKey: 'sk-secret', model: '', baseUrl: '', count: 10 });
+    const backup = await buildBackup();
+    expect(JSON.stringify(backup)).not.toContain('sk-secret');
+
+    await restoreBackup(JSON.parse(JSON.stringify(backup)));
+    expect((await db.settings.get('ai')).value).toMatchObject({ enabled: true, apiKey: 'sk-secret' });
+  });
+});

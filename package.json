@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/usernai89/revisions#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@fontsource/atkinson-hyperlegible": "^5.3.0",
     "@fontsource/big-shoulders-display": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",

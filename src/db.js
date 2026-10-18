@@ -9,7 +9,7 @@
 //  - reviews   : les révisions prévues  { id, lessonId, step, dueDate, status, doneDate, ... }
 //  - questions : les questions          { id, lessonId, kind, prompt, answer, source, ... }
 //      kind = 'definition' | 'list' (générées automatiquement, source 'auto')
-//           | 'qroc' | 'qcm'          (écrites par toi, source 'user')
+//           | 'qroc' | 'qcm'          (écrites par toi, source 'user', ou par l'IA, source 'ai')
 //      Une question QCM a aussi : options [{ text, correct }] et explanation.
 //      Toute question peut avoir un "context" : l'énoncé d'un cas clinique.
 //  - settings  : les réglages           { key, value }
@@ -108,6 +108,18 @@ export function addUserQuestion(question) {
     ratings: { easy: 0, medium: 0, hard: 0 },
     createdAt: Date.now(),
   });
+}
+
+/** Ajoute des questions générées par l'IA à une leçon. */
+export function addAiQuestions(lessonId, questions) {
+  return db.questions.bulkAdd(questions.map((q) => ({
+    ...q,
+    lessonId,
+    source: 'ai',
+    lastRating: null,
+    ratings: { easy: 0, medium: 0, hard: 0 },
+    createdAt: Date.now(),
+  })));
 }
 
 export function updateQuestion(id, changes) {

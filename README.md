@@ -18,7 +18,7 @@ Cahier des charges complet : [docs/cahier-des-charges.md](docs/cahier-des-charge
 - [x] Nouvelle interface « réseau de transport »
 - [x] Statistiques (écran Bilan) : réussite, ponctualité, retards, leçons vues, activité sur 14 jours, rapport par matière
 - [x] Export / import de sauvegarde (fichier .json, rappel au bout de 14 jours)
-- [ ] Emplacement pour une IA (désactivé par défaut)
+- [x] IA facultative (désactivée par défaut) : Claude, OpenAI, Mistral ou tout service compatible OpenAI
 
 ## Lancer l'appli sur ton ordinateur
 
@@ -68,6 +68,24 @@ Tout est stocké sur le téléphone. **Réglages → Sauvegarde → Exporter** c
 téléchargé. **Importer** remplace toutes les données actuelles par celles du fichier.
 L'écran « Aujourd'hui » te le rappelle si ta dernière sauvegarde date de plus de 14 jours.
 
+## IA (facultative)
+
+Désactivée par défaut : l'appli fonctionne entièrement sans. Pour l'activer :
+**Réglages → IA → Activée**, choisis le fournisseur, colle **ta** clé API, puis **Tester**.
+Un bouton « Générer N questions avec l'IA » apparaît alors sur chaque leçon.
+
+| Fournisseur | Ce qu'il faut |
+|---|---|
+| Claude (Anthropic) | une clé (console.anthropic.com) ; modèle par défaut `claude-opus-5-5` |
+| OpenAI | une clé (platform.openai.com) + le nom du modèle |
+| Mistral | une clé (console.mistral.ai) + le nom du modèle |
+| Autre, compatible OpenAI | l'adresse de l'API (ex. OpenRouter, Groq, ou Ollama en local `http://localhost:11434/v1`) + le modèle |
+
+- Le texte de la leçon est envoyé au fournisseur à chaque génération ; il la facture selon ses tarifs.
+- La clé reste sur le téléphone et **n'est jamais incluse dans les sauvegardes**.
+- Les questions de l'IA (étiquette « IA ») se modifient ou se suppriment comme les autres.
+- Pour ajouter un fournisseur : un module avec une fonction `generate()` dans `src/ai/`, déclaré dans `PROVIDERS` (`src/ai/index.js`).
+
 ## Comment ça marche (en bref)
 
 | Fichier | Rôle |
@@ -76,6 +94,7 @@ L'écran « Aujourd'hui » te le rappelle si ta dernière sauvegarde date de plu
 | `src/db.js` | Base de données locale (matières, leçons, révisions, questions) |
 | `src/settings.js` | Réglages (intervalles, méthodes, thème) |
 | `src/scheduler.js` | ★ Planification : dates, priorités, report des révisions ratées |
+| `src/ai/` | IA facultative : `prompt.js` (consigne + vérification), `anthropic.js` (Claude), `openaiCompatible.js` (OpenAI, Mistral…), `index.js` (choix du fournisseur) |
 | `src/backup.js` | Export / import de toutes les données dans un fichier .json |
 | `src/stats.js` | Calcul des statistiques (réussite, ponctualité, retards, activité) |
 | `src/text.js` | Nettoyage et découpage du texte des cours |

@@ -16,6 +16,9 @@
 //
 // Importer une sauvegarde REMPLACE toutes les données actuelles
 // (c'est plus sûr qu'un mélange, qui pourrait créer des doublons).
+//
+// La clé API de l'IA n'est JAMAIS mise dans le fichier (il pourrait être
+// partagé ou envoyé par mail). À l'import, on garde la clé déjà présente.
 
 import { db } from './db.js';
 import { todayStr } from './scheduler.js';
@@ -27,6 +30,8 @@ const TABLES = ['subjects', 'lessons', 'reviews', 'questions', 'settings'];
 export async function buildBackup() {
   const tables = {};
   for (const name of TABLES) tables[name] = await db.table(name).toArray();
+  tables.settings = tables.settings.map((row) =>
+    row.key === 'ai' ? { ...row, value: { ...row.value, apiKey: '' } } : row);
   return {
     app: 'revisions',
     version: BACKUP_VERSION,
@@ -77,9 +82,14 @@ export async function restoreBackup(data) {
   if (error) throw new Error(error);
   const tables = TABLES.map((name) => db.table(name));
   await db.transaction('rw', tables, async () => {
+    const currentAi = await db.settings.get('ai'); // pour conserver la clé API de ce téléphone
     for (const name of TABLES) {
       await db.table(name).clear();
       await db.table(name).bulkAdd(data.tables[name]);
+    }
+    const restoredAi = await db.settings.get('ai');
+    if (currentAi?.value?.apiKey && restoredAi && !restoredAi.value.apiKey) {
+      await db.settings.put({ key: 'ai', value: { ...restoredAi.value, apiKey: currentAi.value.apiKey } });
     }
   });
 }
